@@ -1,0 +1,54 @@
+# Built outputs
+build/
+**/build/
+
+# Gradle
+.gradle/
+local.properties
+
+# Android Studio / IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Keystore files — never commit signing credentials
+*.jks
+*.keystore
+*.p12
+
+# Google Services — contains API keys; add per-environment via CI secrets
+google-services.json
+
+# Firebase App Distribution
+.firebase/
+
+# Secrets / environment
+*.env
+secrets.properties
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Windows
+Thumbs.db
+
+# Linux
+*~
+
+# Kotlin / Java compilation artefacts
+*.class
+*.dex
+*.ap_
+
+# Profiling / captures
+*.hprof
+captures/
+
+# Test results
+test-results/
+lint-results/
+lint-results*.html
+lint-results*.xml
