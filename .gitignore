@@ -27,6 +27,7 @@ google-services.json
 # Secrets / environment
 *.env
 secrets.properties
+keystore.properties
 
 # macOS
 .DS_Store
