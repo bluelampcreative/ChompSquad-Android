@@ -38,18 +38,45 @@ As the user base grows, ChompSquad evolves into a social cooking community where
 ## API & Auth Notes
 
 - **Base URL:** `https://api.chompsquad.app/v1/`
-- **Auth:** JWT bearer tokens — 15-min access token + 30-day refresh token, stored in EncryptedSharedPreferences / Android Keystore
-- **Social auth:** `POST /v1/auth/google` with the Google ID token (mirrors `POST /v1/auth/apple` on iOS)
-- **Subscription tiers:** `free` | `beta` | `pro` | `developer` — returned in `GET /v1/users/me`
-- **RevenueCat:** manages Play Store subscription state; backend notified via webhook
+- **Auth:** JWT bearer tokens with rotation — access token + refresh token; `POST /v1/auth/refresh` issues a new token pair and invalidates the old refresh token. `POST /v1/auth/logout` adds the refresh token JTI to a blocklist.
+- **Social auth:** `POST /v1/auth/apple` (`identity_token`) and `POST /v1/auth/google` (`id_token`) both confirmed in schema. ✅ D1 resolved.
+- **Subscription tiers:** `subscription_tier` string in `UserProfile` — values expected: `free` | `beta` | `pro` | `developer`. `scans_remaining: null` = unlimited (pro/developer); integer = remaining count for free tier.
+- **RevenueCat:** manages Play Store subscription state; backend notified via `POST /v1/webhooks/revenuecat`.
+- **Signed image URLs:** all `url` fields in `RecipeImageSchema` are signed (time-limited). Refresh via `POST /v1/images/refresh-url` with `blob_path`. Android must handle URL expiry in Coil (catch 403, refresh, retry).
+- **Account deletion:** `DELETE /v1/auth/account` — soft-delete that anonymises PII; no request body required.
+
+### Confirmed Endpoint Surface (v0.1.0 schema)
+
+| Group | Endpoints |
+|---|---|
+| Health | `GET /health/live`, `GET /health/ready` |
+| Auth | `POST /v1/auth/register`, `/login`, `/refresh`, `/apple`, `/google`, `/logout`; `DELETE /v1/auth/account` |
+| Users | `GET/PATCH /v1/users/me`; `PUT/DELETE /v1/users/me/avatar` |
+| Scan | `POST /v1/scan` (multipart, 1–5 images, 1 scan credit) |
+| Recipes | `GET/POST /v1/recipes`; `GET/PATCH/DELETE /v1/recipes/{id}` |
+| Recipe Images | `POST /v1/recipes/{id}/images`; `DELETE /v1/recipes/{id}/images/{img_id}`; `PATCH /v1/recipes/{id}/images/order` |
+| Images | `POST /v1/images/upload`; `POST /v1/images/refresh-url` |
+| Meal Plans | `GET /v1/meal-plans/{week_start}`; `PUT /v1/meal-plans/{week_start}/slots`; `DELETE /v1/meal-plans/{week_start}/slots/{slot_id}`; `POST /v1/meal-plans/{plan_id}/shopping-list` |
+| Cookbooks | `GET/POST /v1/cookbooks`; `PATCH/DELETE /v1/cookbooks/{id}`; `PUT /v1/cookbooks/{id}/recipes`; `DELETE /v1/cookbooks/{id}/recipes/{recipe_id}`; `PUT/DELETE /v1/cookbooks/{id}/cover-image` |
+| Feedback | `POST /v1/feedback` |
+
+### ⚠️ API Discrepancies vs Roadmap Assumptions
+
+| # | Discrepancy | Impact |
+|---|---|---|
+| D1 | ~~`POST /v1/auth/google` absent~~ | ✅ **Resolved** — endpoint confirmed in updated schema (`GoogleAuthRequest { id_token }`) |
+| D2 | ~~`personal_rating` + `personal_note` absent~~ | ✅ **Resolved** — both fields now in `RecipeSchema`, `RecipeListItem`, and `UpdateRecipeRequest` (`personal_rating` 1–5 int\|null, `personal_note` string\|null) |
+| D3 | ~~`/v1/cookbooks/*` absent~~ | ✅ **Resolved** — full cookbook CRUD confirmed in updated schema |
+| D4 | ~~No favorites mechanism~~ | ✅ **Resolved** — `is_favorited: boolean` field on `RecipeSchema` and `UpdateRecipeRequest`. **Note: Favorites is NOT a system cookbook** — it is a direct `PATCH /v1/recipes/{id} { is_favorited: true/false }` toggle. The Favorites tab in the Catalog simply filters `RecipeListItem` by `is_favorited == true`. |
+| D5 | Shopping list items have no `checked` field | ⚠️ **Still open** — 6.5 per-item checked state must be client-side only (Room) |
 
 ---
 
 ## Phase 0 — Pre-development Foundations
 > Prerequisite gates before any code is written · **Target: v0.1.0 Play Internal Testing**
 
-- [ ] **0.1** `Design` — Receive and review brand artwork — finalize color palette, typography choice (Nunito / Fredoka for display), mascot usage guidelines
-- [ ] **0.2** `Design` — Define Compose design system — spacing tokens, corner radius (12dp cards, 8dp pills), semantic color mapping, Material Icons icon set
+- [ ] **0.1** `Design` — ~~Receive and review brand artwork~~ **Artwork received and analysed.** Confirmed assets: (a) app icon — bearded chef-dad head on radial-gradient green background, two versions (with translucent "D" letterform overlay and clean); (b) logotype — "Chomp Squad" italic display type, layered stroke effect (dark green outer shadow → white inline stroke → light-medium green fill), transparent background; (c) squad illustration — bearded dad (green shirt, chef hat, wooden spoon) + two daughters (pink shirts, cooking utensils), transparent/black background for compositing onto splash. Finalize mascot usage guidelines (safe zones, minimum sizes, splash compositing rules).
+- [ ] **0.2** `Design` — Define Compose design system — spacing tokens, corner radius (12dp cards, 8dp pills), semantic color mapping, Material Icons icon set. **Confirmed colour palette from brand artwork + iOS screenshots:** app icon background uses a radial gradient (`#72C472` centre → `#2C7A2C` outer edge); adopt the midpoint `~#4AA448` as `colorPrimary`. Logotype fill: `~#6BBF6B` (light-medium green — suitable for `colorSecondary` or on-dark accent); logotype shadow: `~#2B5A2B` (dark green). Light green surface `~#D4EDDA` (tag chips, recipe placeholder tiles). Background `~#F2F2F7`. Brand secondary: hot pink `~#E84A8A` (kids' shirts in squad illustration — reserve for future accent/promo use, not primary UI). Semantic roles: `colorPrimary` = brand green, `colorError` = destructive actions, `colorTertiary` = dev/debug amber. **Body-title layout rule:** Scan, Planner, and Profile root screens carry no top app bar — the screen title is the first element in the scrollable content body. Only pushed destinations (e.g. Settings) use a standard top app bar with back navigation.
 - [ ] **0.3** `Setup` — Set up Android project — Jetpack Compose, min SDK 29 (Android 10), folder structure, Gradle dependency management
 - [ ] **0.4** `Setup` — Configure Google Play Developer account — application ID, signing config, permissions (camera, photo library, internet, notifications)
 - [ ] **0.5** `Setup` — Integrate RevenueCat SDK — configure products, entitlements, and developer user with pro-tier override
@@ -61,13 +88,13 @@ As the user base grows, ChompSquad evolves into a social cooking community where
 > User identity, onboarding, and subscription scaffolding · **Target: v0.1.0 Play Internal Testing**
 
 - [ ] **1.1** `UI` — Onboarding flow — mascot-driven welcome screens with brand green + golden yellow palette, value proposition, sign up / sign in CTA
-- [ ] **1.2** `Auth` — Sign in with Google — `POST /v1/auth/google` with Google ID token; backend handles new vs. returning users; works on both Login and Register screens
+- [ ] **1.2** `Auth` — Sign in with Google — `POST /v1/auth/google` confirmed in API schema. Request body: `{ id_token: string }` (note: `id_token`, not `identity_token`). Response: `TokenResponse`. Use Credential Manager API to obtain the Google ID token; send to backend; backend handles new vs. returning users.
 - [ ] **1.3** `Auth` — Email/password auth — registration, login, forgot password, email verification flow
 - [ ] **1.4** `Data` — JWT token management — secure storage in EncryptedSharedPreferences, refresh logic, session expiry handling
-- [ ] **1.5** `UI` — User profile screen — display name, email, account tier badge (free / pro in golden yellow pill), monthly scan counter
+- [ ] **1.5** `UI` — User profile screen — body-title layout ("Profile" bold, no top app bar). Three stacked content areas: (1) identity card — circular avatar with green camera-badge overlay for photo editing, bold display name, gray email, conditional dark pill `Developer` badge (debug / developer-tier builds only); (2) stats card — two-column split (`Scans This Month` | `Scans Remaining`) with a vertical divider; remaining count shows as `∞` in primary green for pro/developer tier, integer for free tier; (3) settings-row cards — `Developer Settings` (amber icon + text, debug builds only), `Send Feedback`, `Settings` — each a tappable full-width row with trailing chevron
 - [ ] **1.6** `Subscriptions` — Subscription entitlement wiring — RevenueCat entitlement check on launch, gate pro features, developer tier bypass
 - [ ] **1.7** `Subscriptions` — Paywall screen — free vs. pro comparison using green + yellow palette, monthly/annual toggle, Google Play Billing purchase flow via RevenueCat *(ensure "Ad-free experience" is listed as a Pro benefit even before ads ship)*
-- [ ] **1.8** `UI` — Settings screen — account management, sign out, delete account, restore purchases (destructive actions in error red)
+- [ ] **1.8** `UI` — Settings screen — pushed destination with standard top app bar + back navigation. Five grouped sections rendered as rounded cards on a gray background: **Account** (Email read-only, Display Name read-only, Edit Profile `>`); **Subscription** (Upgrade to Pro `>`, Manage Billing & Subscription (green link), Restore Purchases (green link)); **Preferences** (Notifications `>`); **Support** (Contact Support, Privacy Policy, Terms of Service — all green tinted, external links); **Danger Zone** (Sign Out, Delete Account — both in error red, no icons). Footer card (non-interactive): Version + build number right-aligned, Environment value in amber for non-production builds. Destructive actions use error color role throughout.
 
 ---
 
@@ -90,14 +117,14 @@ As the user base grows, ChompSquad evolves into a social cooking community where
 > Browse, search, and view the personal recipe library · **Target: v0.1.0 Play Internal Testing**
 
 - [ ] **3.1** `UI` — Cookbook home screen — recipe grid/list toggle, hero photo display, tag filter chips, full two-way API sync with pagination
-- [ ] **3.2** `UI` — Recipe detail screen — full recipe display, large title, typography hierarchy, all canonical fields
+- [ ] **3.2** `UI` — Recipe detail screen — pushed destination. Floating back button top-left and three floating action buttons top-right (❤️ Favorite toggle, 🔖 Add to Cookbook, ⋯ More menu) — all in white rounded-pill containers overlaid on the content; no standard top app bar. Layout top-to-bottom: large bold title → full-width edge-to-edge hero image (`HorizontalPager`, pagination dots, multiple photos supported) → recipe origin attribution (link icon + source name, gray) → personal star rating row (5 stars + text label, amber) → 3-column stats cards (Cook / Total / Yield, each with green icon + bold value + gray label) → **Tags** section (green-outlined pill chips) → **Ingredients** section (bullet-dot list: ingredient name bold + metric conversion in gray below + quantity right-aligned, dividers between rows) → **Steps** section (not yet visible in reference; numbered instructions). Ingredients list scrolls within the outer `LazyColumn`; no nested scroll.
 - [ ] **3.3** `UI` — Search — full-text search across title, ingredients, tags
 - [ ] **3.4** `UI` — Filter & tag browsing — filter chips using green tint bg + green dark text pills, cuisine/meal type/dietary tags
 - [ ] **3.5** `UI` — Edit saved recipe — edit sheet from detail view toolbar menu, updates backend then local Room database
 - [ ] **3.6** `Data` — Delete recipe — confirmation dialog, removes from backend then Room, error handling on both steps
 - [ ] **3.7** `UI` — Empty states — unique states for zero recipes vs. no search/filter results; CTA navigates to Scan tab
 - [ ] **3.8** `UI` — Bottom navigation — 4-tab layout with brand green tint; icons for Catalog, Scan, Planner, Profile
-- [ ] **3.9** `Assets` — App icon & launch screen — apply final artwork assets, all required adaptive icon sizes, mascot on brand green splash screen
+- [ ] **3.9** `Assets` — App icon & launch screen — adaptive icon: foreground layer = bearded chef-dad head (clean version, no "D" overlay), background layer = radial gradient `#72C472` → `#2C7A2C` (approximate with a solid `#4AA448` if vector gradient unsupported in adaptive icon background). All density buckets (`mdpi` → `xxxhdpi`) + `anydpi-v26` adaptive XML. Splash screen: Android 12+ `SplashScreen` API — `windowSplashScreenBackground` = `#4AA448`, `windowSplashScreenAnimatedIcon` = full squad illustration (dad + two daughters) composited with "Chomp Squad" logotype below; for pre-API 31 fall back to a dedicated `SplashActivity` using the same green background + centred assets.
 
 ---
 
@@ -129,7 +156,7 @@ As the user base grows, ChompSquad evolves into a social cooking community where
 
 - [ ] **6.1** `Data` — Meal plan data models — `MealPlan` + `MealSlot` Room entities, `MealType` enum, serializable schemas for API; register DAOs
 - [ ] **6.2** `Data` — Meal plan repository + API — CRUD endpoints for `/v1/meal-plans/*`, repository with write-through strategy (optimistic local write + background server sync)
-- [ ] **6.3** `UI` — Planner screen (tab root) — weekly grid of 7 days × 5 meal slots (Breakfast/Lunch/Dinner/Snack/Dessert); sync-on-resume; new Planner tab between Scan and Profile
+- [ ] **6.3** `UI` — Planner screen (tab root) — body-title layout ("Meal Planner" + "This Week" + date range, no top app bar). Shopping cart icon button top-right as a floating overlay (not in a top app bar) — navigates to Shopping List. Scrollable list of 7 day-section headers, each separated by a divider; today's day header rendered in primary green with a "Today" pill badge. Meal slot rows within each day show a meal-type icon (moon = Dinner, fork/knife = Snack/other), meal-type label, and recipe name with a trailing chevron to navigate to recipe detail. Empty days show only the day header; future/empty days show a `⊕` add button right-aligned to open the recipe picker. **Not a grid** — this is a vertical list grouped by day. Sync-on-resume.
 - [ ] **6.4** `UI` — Recipe picker — bottom sheet to assign a recipe to a slot; search + filter from cookbook; "Scan New" and "Add Manually" shortcuts
 - [ ] **6.5** `UI / Data` — Shopping list — on-demand list via `POST /v1/meal-plans/{id}/shopping-list` (AI-generated, backend-side); persisted snapshot; checklist with per-item persistence; "Regenerate" to rebuild after plan changes
 
@@ -151,7 +178,7 @@ As the user base grows, ChompSquad evolves into a social cooking community where
 
 > **Backend dependency:** Tasks 8.4 and 8.5 require `PATCH /v1/recipes/{id}` to accept `personal_note` and `personal_rating`. Tasks 8.2 and 8.3 are client-side and can proceed in parallel. *(Backend complete as of iOS v0.2.x — unblock immediately.)*
 
-- [ ] **8.1** `Backend` — *(Already complete — backend accepts `personal_note`, `personal_rating`, and `origin`.)* ✅
+- [x] **8.1** `Backend` — ✅ Confirmed in updated schema. `personal_rating` (int|null, 1–5), `personal_note` (string|null), and `is_favorited` (boolean, default false) are present in `RecipeSchema`, `RecipeListItem`, and `UpdateRecipeRequest`. `origin_type` enum also confirmed. Phases 8.2–8.5 and Favorites (D4) are all unblocked.
 - [ ] **8.2** `Data` — Android data model — add `origin: RecipeOrigin`, `personalRating: Int?`, `personalNote: String?` to `Recipe` Room entity and API schema; bump Room migration version; set `origin` at creation in scan flow (`.scan`) and manual entry (`.manual`)
 - [ ] **8.3** `UI` — Recipe origin badge — source attribution on cards and detail header: scanned + source → source icon + name; manual / no source → authorship icon + "My Recipe"; muted small-text treatment below title *(fully client-side)*
 - [ ] **8.4** `UI / Data` — Personal star rating — 5-star widget in recipe detail; tap to set / clear; debounced PATCH sync; small star row on recipe cards
@@ -162,14 +189,14 @@ As the user base grows, ChompSquad evolves into a social cooking community where
 ## Phase 9 — Cookbooks & Collections (v1.0.0)
 > Named recipe collections for personal organisation; groundwork for social sharing in v2.0 · **Target: v1.0.0 Play Store**
 
-> **Backend dependency:** Cookbook API complete as of iOS v0.2.x — unblock immediately.
+> **Backend dependency:** Cookbook API confirmed live as of March 2026 — all of Phase 9 is unblocked.
 
-- [ ] **9.1** `Backend` — *(Already complete — `/v1/cookbooks/*` endpoints are live.)* ✅
+- [x] **9.1** `Backend` — ✅ Fully confirmed. Cookbook CRUD: `GET/POST /v1/cookbooks`; `PATCH/DELETE /v1/cookbooks/{id}`; `PUT /v1/cookbooks/{id}/recipes`; `DELETE /v1/cookbooks/{id}/recipes/{recipe_id}`; `PUT /v1/cookbooks/{id}/cover-image` (multipart); `DELETE /v1/cookbooks/{id}/cover-image`. `CookbookResponse`: `{ id, name, cover_image_url: String?, recipe_ids: UUID[], created_at, updated_at }`. Q12 ✅ fully resolved. **Favorites is `is_favorited` on Recipe, not a cookbook.**
 - [ ] **9.2** `Data` — Android cookbook data models — `Cookbook` + `CookbookMembership` Room entities, API schemas, repository; register DAOs; bump Room migration version
-- [ ] **9.3** `UI` — Catalog view restructure — rename bottom tab "Cookbook" → "Catalog"; add top tab row: **All Recipes · Cookbooks · Favorites**; Favorites wired to system cookbook; All Recipes retains existing behaviour
-- [ ] **9.4** `UI` — Cookbook shelf view — grid of cookbook cards: title, recipe count, cover image; "New Cookbook" button; tap opens cookbook recipe list
+- [ ] **9.3** `UI` — Catalog view restructure — rename bottom tab "Cookbook" → "Catalog"; add top tab row: **All Recipes · Cookbooks · Favorites**; Favorites tab filters the recipe list by `is_favorited == true` (client-side filter on cached Room data, no separate API call); All Recipes retains existing behaviour
+- [ ] **9.4** `UI` — Cookbook shelf view — grid of cookbook cards (2-column): cover image (brand green placeholder icon when none set, user-uploadable), title, recipe count; `+` `FloatingActionButton` to create new cookbook; tap opens cookbook recipe list
 - [ ] **9.5** `UI` — Add to Cookbook — long-press / context menu on recipe card → "Add to Cookbook…" bottom sheet with membership checkmarks and inline "New Cookbook" creation; also in recipe detail toolbar
-- [ ] **9.6** `UI` — Cookbook management — rename / delete from detail toolbar; remove recipe via swipe-to-delete; Favorites is not deletable; delete confirmation warns recipes remain in Catalog; cover photo via photo picker
+- [ ] **9.6** `UI` — Cookbook management — rename (`PATCH /v1/cookbooks/{id} { name }`) / delete (`DELETE`) from detail toolbar; remove recipe via swipe-to-delete; delete confirmation warns recipes remain in Catalog. **Cover photo (✅ fully resolved):** brand green placeholder when `cover_image_url` is null; tap to upload via `PUT /v1/cookbooks/{id}/cover-image` (multipart); remove via `DELETE /v1/cookbooks/{id}/cover-image`; response is always updated `CookbookResponse`.
 
 ---
 
@@ -238,3 +265,9 @@ The following iOS-specific items have direct Android equivalents already reflect
 | App Store submission | Play Store submission |
 | `PrivacyInfo.xcprivacy` | Play Console data safety form (Phase 10.3) |
 | `@AppStorage` | DataStore / SharedPreferences |
+| No `UINavigationBar` on root tabs (body-title pattern) | No `TopAppBar` in root tab `Scaffold`s; title is first composable in scrollable content |
+| Floating back + action buttons on Recipe Detail (over hero) | `Box` overlay with `IconButton`s in white rounded containers; not a `TopAppBar` |
+| `UIPageViewController` (hero image pager, Recipe Detail) | `HorizontalPager` + `HorizontalPagerIndicator` |
+| Planner as scrollable day-list (not a grid) | `LazyColumn` with sticky day-section headers and `HorizontalDivider` separators |
+| Shopping cart on Planner as floating nav button | Top-right `IconButton` in a `Box` overlay — not a `TopAppBar` action |
+| Settings as grouped `UITableView` sections | `ElevatedCard` per section group inside a `LazyColumn`; section label above each card |

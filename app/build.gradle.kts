@@ -1,27 +1,38 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
+    alias(libs.plugins.koin.compiler)
+    // protobuf applied here in task 1.4 when the .proto token schema is created
+    // firebase-appdistribution applied here in task 5.x when distribution is configured
 }
 
 android {
     namespace = "com.bluelampcreative.chompsquad"
     compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
+        version = release(libs.versions.compileSdk.get().toInt()) {
+            minorApiLevel = libs.versions.minorApiLevel.get().toInt()
         }
     }
 
     defaultConfig {
         applicationId = "com.bluelampcreative.chompsquad"
-        minSdk = 24
-        targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
+        versionCode = libs.versions.appVersionCode.get().toInt()
+        versionName = libs.versions.appVersionName.get()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -30,25 +41,80 @@ android {
             )
         }
     }
+
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
+
     buildFeatures {
         compose = true
+        buildConfig = true  // Required for BuildConfig.DEBUG, VERSION_NAME, VERSION_CODE
     }
 }
 
 dependencies {
+    // ── AndroidX Core ────────────────────────────────────────────────────────
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+
+    // ── Compose BOM ──────────────────────────────────────────────────────────
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
+    implementation(libs.androidx.compose.material3.adaptive.nav.suite)
+
+    // ── Navigation 3 ─────────────────────────────────────────────────────────
+    implementation(libs.bundles.navigation3)
+
+    // ── Koin 4 ───────────────────────────────────────────────────────────────
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
+    implementation(libs.koin.annotations)
+
+    // ── Ktor Client 3 (CIO engine) ───────────────────────────────────────────
+    implementation(libs.bundles.ktor)
+
+    // ── kotlinx ──────────────────────────────────────────────────────────────
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.coroutines.android)
+
+    // ── Room ─────────────────────────────────────────────────────────────────
+    implementation(libs.bundles.room)
+    ksp(libs.androidx.room.compiler)
+
+    // ── Proto DataStore ───────────────────────────────────────────────────────
+    // protobuf {} config block + .proto schema added in task 1.4
+    implementation(libs.androidx.datastore)
+    implementation(libs.protobuf.kotlin.lite)
+
+    // ── Coil 3 ───────────────────────────────────────────────────────────────
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.ktor)
+
+    // ── CameraX ──────────────────────────────────────────────────────────────
+    implementation(libs.bundles.camerax)
+
+    // ── Firebase (BOM-managed) ────────────────────────────────────────────────
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.messaging)
+    debugImplementation(libs.firebase.appdistribution)
+
+    // ── RevenueCat ───────────────────────────────────────────────────────────
+    implementation(libs.revenuecat)
+    implementation(libs.revenuecat.ui)
+
+    // ── Credential Manager + Google Sign-In ──────────────────────────────────
+    implementation(libs.bundles.credentials)
+
+    // ── Test ─────────────────────────────────────────────────────────────────
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
