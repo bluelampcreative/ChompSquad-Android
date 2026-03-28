@@ -108,6 +108,12 @@ android {
         compose = true
         buildConfig = true  // Required for BuildConfig.DEBUG, VERSION_NAME, VERSION_CODE
     }
+
+    // Export Room schema JSON files for migration history tracking.
+    ksp {
+        arg("room.schemaLocation", "$projectDir/schemas")
+        arg("room.incremental", "true")
+    }
 }
 
 dependencies {
