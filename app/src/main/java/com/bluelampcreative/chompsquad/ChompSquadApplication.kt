@@ -1,6 +1,7 @@
 package com.bluelampcreative.chompsquad
 
 import android.app.Application
+import com.bluelampcreative.chompsquad.di.purchasesModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -13,8 +14,9 @@ class ChompSquadApplication : Application() {
         startKoin {
             androidLogger(if (BuildConfig.DEBUG) Level.DEBUG else Level.ERROR)
             androidContext(this@ChompSquadApplication)
-            // Feature modules are registered here as each task is implemented.
-            modules(emptyList())
+            modules(
+                purchasesModule,
+            )
         }
     }
 }

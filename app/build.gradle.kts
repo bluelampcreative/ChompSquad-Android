@@ -11,6 +11,12 @@ plugins {
     // alias(libs.plugins.protobuf)  — applied in task 1.4 when .proto token schema is created
 }
 
+// Load local.properties for API keys injected into BuildConfig.
+val localProperties = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+
 // Load signing credentials from gitignored keystore.properties.
 // Copy keystore.properties.example → keystore.properties and fill in values.
 val keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -38,6 +44,12 @@ android {
         versionName = libs.versions.appVersionName.get()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField(
+            "String",
+            "REVENUECAT_API_KEY",
+            "\"${localProperties["revenuecat.api.key.android"] ?: ""}\""
+        )
     }
 
     signingConfigs {
