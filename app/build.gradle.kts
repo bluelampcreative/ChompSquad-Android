@@ -6,8 +6,7 @@ plugins {
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.crashlytics)
     alias(libs.plugins.koin.compiler)
-    // protobuf applied here in task 1.4 when the .proto token schema is created
-    // firebase-appdistribution applied here in task 5.x when distribution is configured
+    // alias(libs.plugins.protobuf)  — applied in task 1.4 when .proto token schema is created
 }
 
 android {
@@ -105,7 +104,6 @@ dependencies {
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.messaging)
-    debugImplementation(libs.firebase.appdistribution)
 
     // ── RevenueCat ───────────────────────────────────────────────────────────
     implementation(libs.revenuecat)
