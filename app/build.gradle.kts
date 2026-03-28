@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -8,6 +10,17 @@ plugins {
     alias(libs.plugins.koin.compiler)
     // alias(libs.plugins.protobuf)  — applied in task 1.4 when .proto token schema is created
 }
+
+// Load signing credentials from gitignored keystore.properties.
+// Copy keystore.properties.example → keystore.properties and fill in values.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    }
+}
+val hasSigningConfig = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+    .all { keystoreProperties.containsKey(it) }
 
 android {
     namespace = "com.bluelampcreative.chompsquad"
@@ -27,13 +40,34 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (hasSigningConfig) {
+            create("release") {
+                storeFile     = rootProject.file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+                keyAlias      = keystoreProperties["keyAlias"]      as String
+                keyPassword   = keystoreProperties["keyPassword"]   as String
+            }
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
-            versionNameSuffix = "-debug"
+            versionNameSuffix   = "-debug"
+            // Uses default debug signing config automatically.
         }
         release {
             isMinifyEnabled = false
+            if (hasSigningConfig) {
+                signingConfig = signingConfigs.getByName("release")
+            } else {
+                logger.warn(
+                    "⚠️  keystore.properties missing or incomplete — " +
+                    "release build will not be signed. " +
+                    "Copy keystore.properties.example and fill in values."
+                )
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
