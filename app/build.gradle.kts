@@ -45,11 +45,23 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField(
-            "String",
-            "REVENUECAT_API_KEY",
-            "\"${localProperties["revenuecat.api.key.android"] ?: ""}\""
-        )
+        val revenueCatKey = localProperties["revenuecat.api.key.android"] as String? ?: ""
+        if (revenueCatKey.isBlank()) {
+            val isReleaseBuild = gradle.startParameter.taskNames
+                .any { it.contains("release", ignoreCase = true) }
+            if (isReleaseBuild) {
+                error(
+                    "Missing revenuecat.api.key.android in local.properties. " +
+                    "Release builds require a valid RevenueCat API key."
+                )
+            } else {
+                logger.warn(
+                    "⚠️  revenuecat.api.key.android not set in local.properties — " +
+                    "RevenueCat will not initialize in this debug build."
+                )
+            }
+        }
+        buildConfigField("String", "REVENUECAT_API_KEY", "\"$revenueCatKey\"")
     }
 
     signingConfigs {

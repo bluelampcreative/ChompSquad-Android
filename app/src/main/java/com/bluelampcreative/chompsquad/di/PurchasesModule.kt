@@ -7,7 +7,12 @@ import org.koin.dsl.module
 
 val purchasesModule = module {
     single<Purchases> {
-        Purchases.configure(androidContext(), BuildConfig.REVENUECAT_API_KEY)
+        val key = BuildConfig.REVENUECAT_API_KEY
+        require(key.isNotBlank()) {
+            "REVENUECAT_API_KEY is blank — add revenuecat.api.key.android to local.properties " +
+            "and re-sync the project."
+        }
+        Purchases.configure(androidContext(), key)
         Purchases.sharedInstance
     }
 }
