@@ -1,6 +1,7 @@
 package com.bluelampcreative.chompsquad.di
 
 import com.bluelampcreative.chompsquad.BuildConfig
+import com.google.protobuf.api
 import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.PurchasesConfiguration
 import org.koin.android.ext.koin.androidContext
@@ -14,7 +15,10 @@ val purchasesModule = module {
             "and re-sync the project."
         }
         Purchases.configure(
-            PurchasesConfiguration.Builder(androidContext(), key).build()
+            PurchasesConfiguration.Builder(
+                context = androidContext(),
+                apiKey = key
+            ).build()
         )
         Purchases.sharedInstance
     }
