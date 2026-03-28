@@ -4,14 +4,15 @@ import android.app.Application
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
+import org.koin.core.logger.Level
 
-class ChompSquadApp : Application() {
+class ChompSquadApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
         startKoin {
-            androidLogger()
-            androidContext(this@ChompSquadApp)
+            androidLogger(if (BuildConfig.DEBUG) Level.DEBUG else Level.ERROR)
+            androidContext(this@ChompSquadApplication)
             // Feature modules are registered here as each task is implemented.
             modules(emptyList())
         }
