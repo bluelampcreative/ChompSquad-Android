@@ -10,14 +10,12 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
-    <!-- ── Media — photo picker fallback (API 29–32) ─────────────────────── -->
+    <!-- ── Media — photo library access ─────────────────────────────────── -->
+    <!-- API 29–32: READ_EXTERNAL_STORAGE required for photo access outside CameraX capture. -->
+    <!-- API 33+:   system Photo Picker is used — no permission required.                   -->
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
-    <!-- API 33+ uses READ_MEDIA_IMAGES; Photo Picker needs no permission on API 33+ -->
-    <uses-permission
-        android:name="android.permission.READ_MEDIA_IMAGES"
-        tools:ignore="ScopedStorage" />
 
     <!-- ── Push notifications — FCM (runtime prompt on API 33+) ──────────── -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />

@@ -15,8 +15,12 @@ plugins {
 // Copy keystore.properties.example → keystore.properties and fill in values.
 val keystorePropertiesFile = rootProject.file("keystore.properties")
 val keystoreProperties = Properties().apply {
-    if (keystorePropertiesFile.exists()) load(keystorePropertiesFile.inputStream())
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    }
 }
+val hasSigningConfig = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+    .all { keystoreProperties.containsKey(it) }
 
 android {
     namespace = "com.bluelampcreative.chompsquad"
@@ -37,11 +41,13 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            storeFile     = keystoreProperties["storeFile"]?.let { rootProject.file(it) }
-            storePassword = keystoreProperties["storePassword"] as String?
-            keyAlias      = keystoreProperties["keyAlias"]      as String?
-            keyPassword   = keystoreProperties["keyPassword"]   as String?
+        if (hasSigningConfig) {
+            create("release") {
+                storeFile     = rootProject.file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+                keyAlias      = keystoreProperties["keyAlias"]      as String
+                keyPassword   = keystoreProperties["keyPassword"]   as String
+            }
         }
     }
 
@@ -53,7 +59,15 @@ android {
         }
         release {
             isMinifyEnabled = false
-            signingConfig   = signingConfigs.getByName("release")
+            if (hasSigningConfig) {
+                signingConfig = signingConfigs.getByName("release")
+            } else {
+                logger.warn(
+                    "⚠️  keystore.properties missing or incomplete — " +
+                    "release build will not be signed. " +
+                    "Copy keystore.properties.example and fill in values."
+                )
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
