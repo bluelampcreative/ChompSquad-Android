@@ -19,6 +19,8 @@
 > | Subscriptions | RevenueCat Android SDK + Google Play Billing |
 > | Crash reporting | Firebase Crashlytics |
 > | Analytics | **Firebase Analytics** |
+> | Formatting | **ktfmt via Spotless** |
+> | Static analysis | **Detekt + mrmans0n/compose-rules + slackhq/compose-lints** |
 > | Beta distribution | **Firebase App Distribution** |
 > | Push notifications | Firebase Cloud Messaging (FCM) |
 > | Camera | CameraX |
@@ -37,6 +39,12 @@
 - [ ] **0.4** `Setup` — Configure Google Play Developer account — application ID `com.bluelampcreative.chompsquad`, signing config, declare permissions (camera, read media images, internet, post notifications)
 - [ ] **0.5** `Setup` — Integrate RevenueCat SDK — configure products, entitlements, and developer user with pro-tier override; expose `Purchases` instance via Koin singleton
 - [ ] **0.6** `Data` — Define canonical `Recipe` data model — all schema fields with `@Serializable` (kotlinx.serialization); Room `@Entity` + `@Dao`; separate API DTO ↔ domain model mapping; register DAO in Koin module *(hold implementation of mapping layer until data management pattern is demonstrated)*
+- [ ] **0.6b** `Setup` — Code formatting and static analysis — wire three tools into the Gradle build:
+  - **ktfmt via Spotless** — add `com.diffplug.spotless` Gradle plugin; configure `kotlin { ktfmt() }` block; `./gradlew spotlessApply` formats all `.kt` files; `./gradlew spotlessCheck` is a non-formatting gate (used in CI). No `.editorconfig` ktfmt style overrides — zero-config is the point.
+  - **Detekt** — add `io.gitlab.arturbosch.detekt` plugin; create `config/detekt/detekt.yml`; add `io.nlopez.compose.rules:detekt` dependency for `@Composable` static-analysis rules (unstable parameters, missing `key` in `LazyColumn`, incorrect `remember` usage, etc.); runs as part of `./gradlew check`.
+  - **slackhq/compose-lints** — add `com.slack.lint.compose:compose-lint-checks` as a `lintChecks` dependency; extends Android Lint with Compose-aware rules; runs as part of `./gradlew lint`.
+  - Add `spotlessCheck` and `detekt` to the `check` task dependency graph so `./gradlew check` enforces all three.
+  - *Future hook-up:* Phase 5.3 CI workflow should run `./gradlew spotlessCheck lint detekt` as a pre-merge gate.
 
 ---
 

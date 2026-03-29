@@ -81,6 +81,7 @@ As the user base grows, ChompSquad evolves into a social cooking community where
 - [ ] **0.4** `Setup` — Configure Google Play Developer account — application ID, signing config, permissions (camera, photo library, internet, notifications)
 - [ ] **0.5** `Setup` — Integrate RevenueCat SDK — configure products, entitlements, and developer user with pro-tier override
 - [ ] **0.6** `Data` — Define canonical recipe data model in Kotlin — all schema fields, serialization (kotlinx.serialization or Gson), Room entity + DAO
+- [ ] **0.6b** `Setup` — Introduce code formatting and static analysis — **ktfmt** (via Spotless Gradle plugin) for zero-config Kotlin formatting; **Detekt** with `mrmans0n/compose-rules` for static analysis including Compose-specific checks; **slackhq/compose-lints** for Android Lint Compose rules; wire all three into `./gradlew check`; add a `./gradlew spotlessCheck` gate to the CI workflow (Phase 5.3)
 
 ---
 
@@ -232,7 +233,7 @@ As the user base grows, ChompSquad evolves into a social cooking community where
 
 | Phase | Name | Done | Total | Target |
 |---|---|---|---|---|
-| 0 | Pre-development foundations | 0 | 6 | v0.1.0 |
+| 0 | Pre-development foundations | 0 | 7 | v0.1.0 |
 | 1 | Authentication & account | 0 | 8 | v0.1.0 |
 | 2 | Recipe scanner | 0 | 9 | v0.1.0 |
 | 3 | Cookbook & collection | 0 | 9 | v0.1.0 |
@@ -244,7 +245,7 @@ As the user base grows, ChompSquad evolves into a social cooking community where
 | 9 | Cookbooks & collections | 0 | 6 | v1.0.0 |
 | 10 | Play Store launch | 0 | 4 | v1.0.0 |
 | 11 | Social & community | 0 | 10 | v2.0.0 |
-| | **Total** | **0** | **78** | |
+| | **Total** | **0** | **79** | |
 
 ---
 
