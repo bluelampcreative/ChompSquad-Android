@@ -8,7 +8,7 @@ plugins {
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.crashlytics)
     alias(libs.plugins.koin.compiler)
-    // alias(libs.plugins.protobuf)  — applied in task 1.4 when .proto token schema is created
+    // protobuf plugin removed — Preferences DataStore used for token storage (no .proto schema needed)
 }
 
 // Load local.properties for API keys injected into BuildConfig.
@@ -110,6 +110,13 @@ android {
     }
 }
 
+// Export Room schema JSON files for migration history tracking.
+// Must be top-level — ksp {} is a Gradle extension, not an android {} sub-block.
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+    arg("room.incremental", "true")
+}
+
 dependencies {
     // ── AndroidX Core ────────────────────────────────────────────────────────
     implementation(libs.androidx.core.ktx)
@@ -146,9 +153,8 @@ dependencies {
     ksp(libs.androidx.room.compiler)
 
     // ── Proto DataStore ───────────────────────────────────────────────────────
-    // protobuf {} config block + .proto schema added in task 1.4
-    implementation(libs.androidx.datastore)
-    implementation(libs.protobuf.kotlin.lite)
+    // Preferences DataStore — two string keys for JWT access + refresh tokens
+    implementation(libs.androidx.datastore.preferences)
 
     // ── Coil 3 ───────────────────────────────────────────────────────────────
     implementation(libs.coil.compose)

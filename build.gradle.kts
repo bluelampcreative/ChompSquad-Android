@@ -7,6 +7,6 @@ plugins {
     alias(libs.plugins.ksp)                     apply false
     alias(libs.plugins.google.services)         apply false
     alias(libs.plugins.firebase.crashlytics)    apply false
-    alias(libs.plugins.protobuf)                apply false  // applied in :app at task 1.4
+    // protobuf plugin removed — Preferences DataStore replaces Proto DataStore for token storage
     alias(libs.plugins.koin.compiler)           apply false
 }
