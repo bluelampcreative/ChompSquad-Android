@@ -22,7 +22,7 @@ As the user base grows, ChompSquad evolves into a social cooking community where
 | Network | Retrofit + OkHttp |
 | Image loading | Coil |
 | Async | Kotlin Coroutines + Flow |
-| Secure storage | EncryptedSharedPreferences / Android Keystore |
+| Secure storage | Preferences DataStore / Android Keystore |
 | Subscriptions | RevenueCat Android SDK + Google Play Billing |
 | Crash reporting | Firebase Crashlytics |
 | Push notifications | Firebase Cloud Messaging (FCM) |
@@ -90,7 +90,7 @@ As the user base grows, ChompSquad evolves into a social cooking community where
 - [ ] **1.1** `UI` — Onboarding flow — mascot-driven welcome screens with brand green + golden yellow palette, value proposition, sign up / sign in CTA
 - [ ] **1.2** `Auth` — Sign in with Google — `POST /v1/auth/google` confirmed in API schema. Request body: `{ id_token: string }` (note: `id_token`, not `identity_token`). Response: `TokenResponse`. Use Credential Manager API to obtain the Google ID token; send to backend; backend handles new vs. returning users.
 - [ ] **1.3** `Auth` — Email/password auth — registration, login, forgot password, email verification flow
-- [ ] **1.4** `Data` — JWT token management — secure storage in EncryptedSharedPreferences, refresh logic, session expiry handling
+- [ ] **1.4** `Data` — JWT token management — secure storage in Preferences DataStore (two string keys, encrypted via Android Keystore — no protobuf plugin required), refresh logic, session expiry handling
 - [ ] **1.5** `UI` — User profile screen — body-title layout ("Profile" bold, no top app bar). Three stacked content areas: (1) identity card — circular avatar with green camera-badge overlay for photo editing, bold display name, gray email, conditional dark pill `Developer` badge (debug / developer-tier builds only); (2) stats card — two-column split (`Scans This Month` | `Scans Remaining`) with a vertical divider; remaining count shows as `∞` in primary green for pro/developer tier, integer for free tier; (3) settings-row cards — `Developer Settings` (amber icon + text, debug builds only), `Send Feedback`, `Settings` — each a tappable full-width row with trailing chevron
 - [ ] **1.6** `Subscriptions` — Subscription entitlement wiring — RevenueCat entitlement check on launch, gate pro features, developer tier bypass
 - [ ] **1.7** `Subscriptions` — Paywall screen — free vs. pro comparison using green + yellow palette, monthly/annual toggle, Google Play Billing purchase flow via RevenueCat *(ensure "Ad-free experience" is listed as a Pro benefit even before ads ship)*
