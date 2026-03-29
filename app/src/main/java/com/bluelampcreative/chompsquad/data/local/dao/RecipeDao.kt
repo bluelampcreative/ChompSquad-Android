@@ -33,10 +33,12 @@ interface RecipeDao {
     @Transaction
     @Query("""
         SELECT * FROM recipes
-        WHERE (:tag IS NULL OR tags LIKE '%' || :tag || '%')
+        WHERE (:tag IS NULL OR tags LIKE '%,' || :tag || ',%')
         AND (:search IS NULL OR title LIKE '%' || :search || '%')
         ORDER BY created_at DESC
     """)
+    // Tags are stored as ",tag1,tag2," so matching against ',%tag%,' avoids
+    // false positives from substring matches (e.g. "beef" matching "cornedbeef").
     fun observeFiltered(tag: String?, search: String?): Flow<List<RecipeWithDetails>>
 
     // ── Writes ────────────────────────────────────────────────────────────────
@@ -53,6 +55,20 @@ interface RecipeDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertSteps(steps: List<StepEntity>)
 
+    @Query("DELETE FROM recipe_images  WHERE recipe_id = :recipeId")
+    suspend fun deleteImagesForRecipe(recipeId: String)
+
+    @Query("DELETE FROM ingredients WHERE recipe_id = :recipeId")
+    suspend fun deleteIngredientsForRecipe(recipeId: String)
+
+    @Query("DELETE FROM steps WHERE recipe_id = :recipeId")
+    suspend fun deleteStepsForRecipe(recipeId: String)
+
+    /**
+     * Full replace of a recipe and all its children in a single transaction.
+     * Children are deleted before re-inserting so rows removed on the server
+     * do not linger in the local database.
+     */
     @Transaction
     suspend fun upsertRecipeWithDetails(
         recipe: RecipeEntity,
@@ -61,8 +77,11 @@ interface RecipeDao {
         steps: List<StepEntity>,
     ) {
         upsertRecipe(recipe)
+        deleteImagesForRecipe(recipe.id)
         upsertImages(images)
+        deleteIngredientsForRecipe(recipe.id)
         upsertIngredients(ingredients)
+        deleteStepsForRecipe(recipe.id)
         upsertSteps(steps)
     }
 
@@ -75,6 +94,7 @@ interface RecipeDao {
     @Query("UPDATE recipes SET is_favorited = :isFavorited WHERE id = :id")
     suspend fun setFavorited(id: String, isFavorited: Boolean)
 
-    @Query("UPDATE recipes SET url = :url WHERE id = :imageId")
+    // Refresh a signed image URL in the recipe_images table.
+    @Query("UPDATE recipe_images SET url = :url WHERE id = :imageId")
     suspend fun refreshImageUrl(imageId: String, url: String)
 }

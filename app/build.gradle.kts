@@ -108,12 +108,13 @@ android {
         compose = true
         buildConfig = true  // Required for BuildConfig.DEBUG, VERSION_NAME, VERSION_CODE
     }
+}
 
-    // Export Room schema JSON files for migration history tracking.
-    ksp {
-        arg("room.schemaLocation", "$projectDir/schemas")
-        arg("room.incremental", "true")
-    }
+// Export Room schema JSON files for migration history tracking.
+// Must be top-level — ksp {} is a Gradle extension, not an android {} sub-block.
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+    arg("room.incremental", "true")
 }
 
 dependencies {

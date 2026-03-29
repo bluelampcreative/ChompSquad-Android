@@ -4,7 +4,13 @@ package com.bluelampcreative.chompsquad.domain.model
 // These are the canonical in-app representations used by UI and business logic.
 // They are decoupled from both the API DTO schema and the Room entity schema.
 
-enum class OriginType { SCANNED, MANUAL, SOCIAL_SAVE }
+enum class OriginType {
+    SCANNED,
+    MANUAL,
+    SOCIAL_SAVE,
+    /** Returned by the server for a type this client does not yet recognise. */
+    UNKNOWN,
+}
 
 data class Recipe(
     val id: String,

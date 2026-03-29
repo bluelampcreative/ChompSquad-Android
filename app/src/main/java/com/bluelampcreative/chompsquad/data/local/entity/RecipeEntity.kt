@@ -22,7 +22,9 @@ data class RecipeEntity(
     @ColumnInfo(name = "cook_time")      val cookTime: Int?,
     @ColumnInfo(name = "total_time")     val totalTime: Int?,
     val source: String?,
-    // Tags stored as a comma-separated string; split on read via TypeConverter.
+    // Tags stored as a delimiter-wrapped string: ",tag1,tag2," — the leading and
+    // trailing commas allow exact-word LIKE matching in SQL without a join table.
+    // Split on read in RecipeMapper.toDomain() (not via Room TypeConverter).
     val tags: String,
     @ColumnInfo(name = "personal_rating") val personalRating: Int?,
     @ColumnInfo(name = "personal_note")   val personalNote: String?,
