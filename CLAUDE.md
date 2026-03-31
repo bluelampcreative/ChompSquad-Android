@@ -41,6 +41,13 @@ app/src/main/java/com/bluelampcreative/chompsquad/
 Extend `CoreViewModel<StateType, ActionType, UIEventType>`. The `StateReducer` handles
 state via a `Channel`-backed running fold — dispatch actions, never mutate state directly.
 
+- **State**: dispatch `ActionType` via `state.dispatch(action)` — never mutate directly.
+- **Navigation events** (VM → UI one-shots): call `navigate(event: UIEventType)`. Collect
+  `viewModel.navEvents` in the composable via `LaunchedEffect(Unit)`. Use
+  `rememberUpdatedState` when the navigation lambda is captured inside the effect.
+- **UI events** (UI → VM): implement `handleEvent(event: UIEventType)` from `UIEventHandler`
+  for button-press style interactions when needed.
+
 ## Gradle conventions
 
 - `ksp {}` block goes at **top level** in `app/build.gradle.kts`, not inside `android {}`.
@@ -71,7 +78,7 @@ Or to auto-format first:
 | Concern | Decision | Reason |
 |---|---|---|
 | Token storage | Preferences DataStore (two string keys) | Proto DataStore overhead not justified for two strings |
-| DI | Koin 4 with compiler plugin | Replaces KSP-based annotation processing |
+| DI | Koin 4 DSL (`viewModelOf`, `single`, `factory`) | Compiler plugin v0.4.1 removed — rejects DSL-declared modules with spurious errors |
 | Serialization | kotlinx.serialization | Used for both API DTOs and Navigation 3 route serialization |
 | Room schema | `exportSchema = true`, exports to `app/schemas/` | Schema tracked in version control |
 

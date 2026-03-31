@@ -2,9 +2,11 @@ package com.bluelampcreative.chompsquad.feature.signin
 
 import android.app.Activity
 import android.util.Log
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,14 +15,15 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -31,6 +34,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -39,6 +43,7 @@ import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bluelampcreative.chompsquad.BuildConfig
+import com.bluelampcreative.chompsquad.R
 import com.bluelampcreative.chompsquad.ui.theme.ChompSquadTheme
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -112,7 +117,7 @@ fun SignInScreen(
       Spacer(modifier = Modifier.weight(1f))
 
       // Google Sign-In button
-      Button(
+      GoogleSignInButton(
           onClick = {
             scope.launch {
               launchGoogleSignIn(
@@ -124,19 +129,9 @@ fun SignInScreen(
               )
             }
           },
+          isLoading = uiState.isLoading,
           modifier = Modifier.fillMaxWidth(),
-          enabled = !uiState.isLoading,
-      ) {
-        if (uiState.isLoading) {
-          CircularProgressIndicator(
-              modifier = Modifier.size(20.dp),
-              strokeWidth = 2.dp,
-              color = MaterialTheme.colorScheme.onPrimary,
-          )
-        } else {
-          Text("Sign in with Google")
-        }
-      }
+      )
 
       Spacer(modifier = Modifier.height(24.dp))
     }
@@ -150,6 +145,39 @@ fun SignInScreen(
         text = { Text(message) },
         confirmButton = { TextButton(onClick = viewModel::dismissError) { Text("OK") } },
     )
+  }
+}
+
+@Composable
+private fun GoogleSignInButton(
+    onClick: () -> Unit,
+    isLoading: Boolean,
+    modifier: Modifier = Modifier,
+) {
+  OutlinedButton(
+      onClick = onClick,
+      modifier = modifier,
+      enabled = !isLoading,
+  ) {
+    if (isLoading) {
+      CircularProgressIndicator(
+          modifier = Modifier.size(20.dp),
+          strokeWidth = 2.dp,
+      )
+    } else {
+      Row(
+          horizontalArrangement = Arrangement.Center,
+          verticalAlignment = Alignment.CenterVertically,
+      ) {
+        Image(
+            painter = painterResource(R.drawable.ic_google_logo),
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text("Sign in with Google")
+      }
+    }
   }
 }
 
@@ -222,7 +250,7 @@ private fun SignInScreenPreview() {
           color = MaterialTheme.colorScheme.onSurfaceVariant,
       )
       Spacer(modifier = Modifier.height(32.dp))
-      Button(onClick = {}, modifier = Modifier.fillMaxWidth()) { Text("Sign in with Google") }
+      GoogleSignInButton(onClick = {}, isLoading = false, modifier = Modifier.fillMaxWidth())
     }
   }
 }
