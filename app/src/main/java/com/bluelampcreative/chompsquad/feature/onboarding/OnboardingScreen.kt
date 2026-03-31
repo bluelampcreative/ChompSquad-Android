@@ -39,6 +39,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.bluelampcreative.chompsquad.ui.theme.ChompSquadTheme
+import com.bluelampcreative.chompsquad.ui.theme.brandGolden
+import com.bluelampcreative.chompsquad.ui.theme.brandGoldenDark
 import com.bluelampcreative.chompsquad.ui.theme.brandGreen
 import com.bluelampcreative.chompsquad.ui.theme.brandGreenContainer
 import com.bluelampcreative.chompsquad.ui.theme.brandGreenMid
@@ -243,7 +245,8 @@ private fun OnboardingCtas(
         modifier = Modifier.fillMaxWidth(),
         colors =
             ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
+                containerColor = brandGolden,
+                contentColor = brandGoldenDark,
             ),
     ) {
       Text("Create account")

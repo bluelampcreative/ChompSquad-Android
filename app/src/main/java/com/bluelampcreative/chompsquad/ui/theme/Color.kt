@@ -15,6 +15,11 @@ val brandGreenOnDark = Color(0xFF0A2C0A) // text on primary in dark theme
 // Brand pink retained for promo / marketing material — not a primary UI colour.
 val brandPink = Color(0xFFE84A8A)
 
+// ── Brand golden yellow ───────────────────────────────────────────────────────
+// Warm accent for onboarding CTAs and promotional surfaces. Distinct from debugAmber.
+val brandGolden = Color(0xFFF5C542)
+val brandGoldenDark = Color(0xFF7A5200) // accessible text/icon on brandGolden container
+
 // ── Tertiary / debug ──────────────────────────────────────────────────────────
 // Amber is used exclusively for debug / developer UI (badge, Environment label).
 val debugAmber = Color(0xFFD97706)
