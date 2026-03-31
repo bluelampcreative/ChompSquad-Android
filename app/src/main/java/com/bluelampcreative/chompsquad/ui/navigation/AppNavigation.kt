@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import com.bluelampcreative.chompsquad.ui.onboarding.OnboardingScreen
+import com.bluelampcreative.chompsquad.feature.onboarding.OnboardingScreen
 
 /**
  * Root composable for the app. Sets up a Navigation 3 [NavDisplay] starting at
