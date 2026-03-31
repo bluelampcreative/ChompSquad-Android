@@ -1,4 +1,4 @@
-# Detekt 2.x configuration for ChompSquad Android
+# Detekt 1.23.x configuration for ChompSquad Android
 # buildUponDefaultConfig = true in build.gradle.kts, so only overrides are needed here.
 # Full rule reference: https://detekt.dev/docs/rules/comments
 
