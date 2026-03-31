@@ -1,5 +1,7 @@
 package com.bluelampcreative.chompsquad.data.local
 
+import org.koin.core.annotation.Singleton
+
 /**
  * Contract for persisting the JWT access and refresh token pair.
  *
@@ -20,6 +22,7 @@ interface TokenRepository {
  * In-memory stub — tokens are lost on process death. Replaced by the DataStore-backed
  * implementation in task 1.4.
  */
+@Singleton(binds = [TokenRepository::class])
 class InMemoryTokenRepository : TokenRepository {
   private var accessToken: String? = null
   private var refreshToken: String? = null

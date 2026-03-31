@@ -7,8 +7,7 @@ plugins {
   alias(libs.plugins.ksp)
   alias(libs.plugins.google.services)
   alias(libs.plugins.firebase.crashlytics)
-  // koin.compiler plugin removed — v0.4.1 does not support DSL-declared modules and produces
-  // spurious "Missing definition" compile errors. Re-evaluate when the plugin stabilises.
+  alias(libs.plugins.koin.compiler)
   alias(libs.plugins.detekt)
 }
 

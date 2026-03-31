@@ -2,9 +2,6 @@ package com.bluelampcreative.chompsquad.di
 
 import android.util.Log
 import com.bluelampcreative.chompsquad.BuildConfig
-import com.bluelampcreative.chompsquad.data.local.InMemoryTokenRepository
-import com.bluelampcreative.chompsquad.data.local.TokenRepository
-import com.bluelampcreative.chompsquad.data.remote.AuthApi
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -16,11 +13,18 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
-import org.koin.dsl.module
+import org.koin.core.annotation.ComponentScan
+import org.koin.core.annotation.Configuration
+import org.koin.core.annotation.Module
+import org.koin.core.annotation.Singleton
 
-val networkModule = module {
-  single<HttpClient> {
-    HttpClient(CIO) {
+@Module
+@ComponentScan("com.bluelampcreative.chompsquad.data.remote")
+@Configuration
+class NetworkModule {
+  @Singleton
+  fun provideHttpClient(): HttpClient {
+    return HttpClient(CIO) {
       install(ContentNegotiation) {
         json(
             Json {
@@ -44,9 +48,4 @@ val networkModule = module {
       }
     }
   }
-
-  single { AuthApi(get()) }
-
-  // In-memory stub until task 1.4 wires the DataStore-backed implementation.
-  single<TokenRepository> { InMemoryTokenRepository() }
 }
