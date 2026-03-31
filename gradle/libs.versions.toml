@@ -138,7 +138,7 @@ androidx-credentials-play-services-auth = { group = "androidx.credentials", name
 google-identity-googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
 
 # ── Code quality — runtime artifacts ─────────────────────────────────────────
-# detektPlugins(...) in app/build.gradle.kts — Compose rules for Detekt 2.x
+# detektPlugins(...) in app/build.gradle.kts — Compose rules for Detekt 1.x
 detekt-compose-rules = { group = "io.nlopez.compose.rules", name = "detekt", version.ref = "detektComposeRules" }
 # lintChecks(...) in app/build.gradle.kts — Compose rules for Android Lint
 compose-lint-checks = { group = "com.slack.lint.compose", name = "compose-lint-checks", version.ref = "composeLintChecks" }
