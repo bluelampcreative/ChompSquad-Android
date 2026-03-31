@@ -2,6 +2,7 @@ package com.bluelampcreative.chompsquad
 
 import android.app.Application
 import com.bluelampcreative.chompsquad.di.dataModule
+import com.bluelampcreative.chompsquad.di.networkModule
 import com.bluelampcreative.chompsquad.di.purchasesModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -17,6 +18,7 @@ class ChompSquadApplication : Application() {
       androidContext(this@ChompSquadApplication)
       modules(
           dataModule,
+          networkModule,
           purchasesModule,
       )
     }

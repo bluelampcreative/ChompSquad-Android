@@ -11,13 +11,14 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.bluelampcreative.chompsquad.feature.onboarding.OnboardingScreen
+import com.bluelampcreative.chompsquad.feature.signin.SignInScreen
 
 /**
  * Root composable for the app. Sets up a Navigation 3 [NavDisplay] starting at
  * [AppRoute.Onboarding].
  *
- * Auth destinations (SignIn, SignUp) are wired here as stubs; they will be implemented in tasks 1.2
- * and 1.3. The Main shell (bottom-nav tabs) is likewise a stub for task 3.8.
+ * SignIn is implemented in task 1.2. SignUp and the Main shell are stubs for tasks 1.3 and 3.8
+ * respectively.
  */
 @Suppress("ModifierMissing") // Root navigation composable — no modifier parameter needed
 @Composable
@@ -36,8 +37,13 @@ fun ChompSquadApp() {
               )
             }
             entry<AppRoute.SignIn> {
-              // TODO(task 1.2 / 1.3): implement Sign-In screen
-              AuthPlaceholderScreen(label = "Sign In")
+              SignInScreen(
+                  onNavigateToMain = {
+                    backStack.clear()
+                    backStack += AppRoute.Main
+                  },
+                  onNavigateBack = { backStack.removeLastOrNull() },
+              )
             }
             entry<AppRoute.SignUp> {
               // TODO(task 1.3): implement Sign-Up screen
@@ -51,7 +57,7 @@ fun ChompSquadApp() {
   )
 }
 
-/** Temporary placeholder composable used until auth screens are implemented in tasks 1.2–1.3. */
+/** Temporary placeholder composable used until auth screens are implemented in tasks 1.3+. */
 @Composable
 private fun AuthPlaceholderScreen(label: String) {
   Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

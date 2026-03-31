@@ -52,10 +52,11 @@ android {
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
+    val isReleaseBuild =
+        gradle.startParameter.taskNames.any { it.contains("release", ignoreCase = true) }
+
     val revenueCatKey = localProperties["revenuecat.api.key.android"] as String? ?: ""
     if (revenueCatKey.isBlank()) {
-      val isReleaseBuild =
-          gradle.startParameter.taskNames.any { it.contains("release", ignoreCase = true) }
       if (isReleaseBuild) {
         error(
             "Missing revenuecat.api.key.android in local.properties. " +
@@ -69,6 +70,38 @@ android {
       }
     }
     buildConfigField("String", "REVENUECAT_API_KEY", "\"$revenueCatKey\"")
+
+    val apiBaseUrl = localProperties["api.base.url"] as String? ?: ""
+    if (apiBaseUrl.isBlank()) {
+      if (isReleaseBuild) {
+        error(
+            "Missing api.base.url in local.properties. " +
+                "Release builds require a valid API base URL."
+        )
+      } else {
+        logger.warn(
+            "⚠️  api.base.url not set in local.properties — " +
+                "network calls will fail in this debug build."
+        )
+      }
+    }
+    buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
+
+    val googleWebClientId = localProperties["google.web.client.id"] as String? ?: ""
+    if (googleWebClientId.isBlank()) {
+      if (isReleaseBuild) {
+        error(
+            "Missing google.web.client.id in local.properties. " +
+                "Release builds require a valid Google Web Client ID."
+        )
+      } else {
+        logger.warn(
+            "⚠️  google.web.client.id not set in local.properties — " +
+                "Google Sign-In will fail in this debug build."
+        )
+      }
+    }
+    buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
   }
 
   signingConfigs {
@@ -144,6 +177,7 @@ dependencies {
   implementation(libs.androidx.compose.ui.tooling.preview)
   implementation(libs.androidx.compose.material3)
   implementation(libs.androidx.compose.material3.adaptive.nav.suite)
+  implementation(libs.androidx.compose.material.icons.core)
 
   // ── Navigation 3 ─────────────────────────────────────────────────────────
   implementation(libs.bundles.navigation3)

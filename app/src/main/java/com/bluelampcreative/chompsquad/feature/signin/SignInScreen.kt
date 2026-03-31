@@ -1,0 +1,228 @@
+package com.bluelampcreative.chompsquad.feature.signin
+
+import android.app.Activity
+import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.bluelampcreative.chompsquad.BuildConfig
+import com.bluelampcreative.chompsquad.ui.theme.ChompSquadTheme
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import java.util.UUID
+import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
+
+private const val TAG = "SignInScreen"
+
+@Composable
+fun SignInScreen(
+    onNavigateToMain: () -> Unit,
+    onNavigateBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: SignInViewModel = koinViewModel(),
+) {
+  val uiState by viewModel.viewState.collectAsStateWithLifecycle()
+  val context = LocalContext.current
+  val scope = rememberCoroutineScope()
+
+  // rememberUpdatedState ensures the LaunchedEffect always calls the latest lambda reference
+  // even though the effect key is stable (Unit).
+  val currentOnNavigateToMain by rememberUpdatedState(onNavigateToMain)
+
+  // One-shot navigation events from the ViewModel.
+  LaunchedEffect(Unit) {
+    viewModel.navEvents.collect { event ->
+      when (event) {
+        SignInNavEvent.NavigateToMain -> currentOnNavigateToMain()
+      }
+    }
+  }
+
+  Box(modifier = modifier.fillMaxSize()) {
+    Column(
+        modifier =
+            Modifier.fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+      // Back button
+      Box(modifier = Modifier.fillMaxWidth()) {
+        IconButton(onClick = onNavigateBack) {
+          Icon(
+              imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+              contentDescription = "Back",
+          )
+        }
+      }
+
+      Spacer(modifier = Modifier.weight(1f))
+
+      // Heading
+      Text(
+          text = "Welcome back",
+          style = MaterialTheme.typography.headlineLarge,
+          textAlign = TextAlign.Center,
+      )
+
+      Spacer(modifier = Modifier.height(8.dp))
+
+      Text(
+          text = "Sign in to access your recipes",
+          style = MaterialTheme.typography.bodyLarge,
+          textAlign = TextAlign.Center,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+
+      Spacer(modifier = Modifier.weight(1f))
+
+      // Google Sign-In button
+      Button(
+          onClick = {
+            scope.launch {
+              launchGoogleSignIn(
+                  context = context as Activity,
+                  onTokenReceived = viewModel::signInWithGoogle,
+                  onError = { message ->
+                    viewModel.viewState.dispatch(SignInAction.ShowError(message))
+                  },
+              )
+            }
+          },
+          modifier = Modifier.fillMaxWidth(),
+          enabled = !uiState.isLoading,
+      ) {
+        if (uiState.isLoading) {
+          CircularProgressIndicator(
+              modifier = Modifier.size(20.dp),
+              strokeWidth = 2.dp,
+              color = MaterialTheme.colorScheme.onPrimary,
+          )
+        } else {
+          Text("Sign in with Google")
+        }
+      }
+
+      Spacer(modifier = Modifier.height(24.dp))
+    }
+  }
+
+  // Error dialog
+  uiState.errorMessage?.let { message ->
+    AlertDialog(
+        onDismissRequest = viewModel::dismissError,
+        title = { Text("Sign in failed") },
+        text = { Text(message) },
+        confirmButton = { TextButton(onClick = viewModel::dismissError) { Text("OK") } },
+    )
+  }
+}
+
+/**
+ * Launches the Credential Manager bottom sheet to obtain a Google ID token.
+ *
+ * Must be called from a composable coroutine scope with an [Activity] context.
+ */
+private suspend fun launchGoogleSignIn(
+    context: Activity,
+    onTokenReceived: (idToken: String) -> Unit,
+    onError: (message: String) -> Unit,
+) {
+  val credentialManager = CredentialManager.create(context)
+
+  val googleIdOption =
+      GetGoogleIdOption.Builder()
+          .setServerClientId(BuildConfig.GOOGLE_WEB_CLIENT_ID)
+          .setFilterByAuthorizedAccounts(false)
+          .setAutoSelectEnabled(false)
+          .setNonce(UUID.randomUUID().toString())
+          .build()
+
+  val request = GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
+
+  runCatching { credentialManager.getCredential(context, request) }
+      .onSuccess { result ->
+        val credential = result.credential
+        if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+          val googleCredential = GoogleIdTokenCredential.createFrom(credential.data)
+          onTokenReceived(googleCredential.idToken)
+        } else {
+          onError("Unexpected credential type. Please try again.")
+        }
+      }
+      .onFailure { error ->
+        when (error) {
+          is GetCredentialCancellationException -> {
+            // User dismissed the sheet — silent, no error shown.
+            Log.d(TAG, "Google Sign-In cancelled by user")
+          }
+          else -> onError(error.message ?: "Sign in failed. Please try again.")
+        }
+      }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+private fun SignInScreenPreview() {
+  ChompSquadTheme {
+    Column(
+        modifier =
+            Modifier.fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+      Text(
+          text = "Welcome back",
+          style = MaterialTheme.typography.headlineLarge,
+          textAlign = TextAlign.Center,
+      )
+      Spacer(modifier = Modifier.height(8.dp))
+      Text(
+          text = "Sign in to access your recipes",
+          style = MaterialTheme.typography.bodyLarge,
+          textAlign = TextAlign.Center,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+      Spacer(modifier = Modifier.height(32.dp))
+      Button(onClick = {}, modifier = Modifier.fillMaxWidth()) { Text("Sign in with Google") }
+    }
+  }
+}
