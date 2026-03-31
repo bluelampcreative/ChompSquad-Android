@@ -190,7 +190,7 @@ dependencies {
   implementation(libs.bundles.credentials)
 
   // ── Code quality ─────────────────────────────────────────────────────────
-  // Compose-specific Detekt rules (requires Detekt 2.x)
+  // Compose-specific Detekt rules (compatible with Detekt 1.23.x)
   detektPlugins(libs.detekt.compose.rules)
   // Compose-specific Android Lint rules (slackhq/compose-lints)
   lintChecks(libs.compose.lint.checks)
