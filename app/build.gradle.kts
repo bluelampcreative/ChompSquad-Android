@@ -7,9 +7,8 @@ plugins {
   alias(libs.plugins.ksp)
   alias(libs.plugins.google.services)
   alias(libs.plugins.firebase.crashlytics)
-  alias(libs.plugins.koin.compiler)
-  // protobuf plugin removed — Preferences DataStore used for token storage (no .proto schema
-  // needed)
+  // koin.compiler plugin removed — v0.4.1 does not support DSL-declared modules and produces
+  // spurious "Missing definition" compile errors. Re-evaluate when the plugin stabilises.
   alias(libs.plugins.detekt)
 }
 

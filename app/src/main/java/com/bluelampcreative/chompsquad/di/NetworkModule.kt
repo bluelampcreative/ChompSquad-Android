@@ -5,6 +5,7 @@ import com.bluelampcreative.chompsquad.BuildConfig
 import com.bluelampcreative.chompsquad.data.local.InMemoryTokenRepository
 import com.bluelampcreative.chompsquad.data.local.TokenRepository
 import com.bluelampcreative.chompsquad.data.remote.AuthApi
+import com.bluelampcreative.chompsquad.feature.signin.SignInViewModel
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -16,6 +17,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val networkModule = module {
@@ -49,4 +51,6 @@ val networkModule = module {
 
   // In-memory stub until task 1.4 wires the DataStore-backed implementation.
   single<TokenRepository> { InMemoryTokenRepository() }
+
+  viewModelOf(::SignInViewModel)
 }

@@ -4,25 +4,18 @@ import androidx.lifecycle.viewModelScope
 import com.bluelampcreative.chompsquad.core.CoreViewModel
 import com.bluelampcreative.chompsquad.data.local.TokenRepository
 import com.bluelampcreative.chompsquad.data.remote.AuthApi
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class SignInViewModel(
     private val authApi: AuthApi,
     private val tokenRepository: TokenRepository,
-) : CoreViewModel<SignInViewState, SignInAction, Unit>(SignInViewState()) {
-
-  private val _navEvents = Channel<SignInNavEvent>(Channel.BUFFERED)
-
-  /** Collect in the composable with [LaunchedEffect] to handle one-shot navigation. */
-  val navEvents = _navEvents.receiveAsFlow()
+) : CoreViewModel<SignInViewState, SignInAction, SignInNavEvent>(SignInViewState()) {
 
   override fun reducer(state: SignInViewState, action: SignInAction): SignInViewState =
       when (action) {
-        SignInAction.StartLoading -> state.copy(isLoading = true, errorMessage = null)
+        is SignInAction.StartLoading -> state.copy(isLoading = true, errorMessage = null)
         is SignInAction.ShowError -> state.copy(isLoading = false, errorMessage = action.message)
-        SignInAction.DismissError -> state.copy(errorMessage = null)
+        is SignInAction.DismissError -> state.copy(errorMessage = null)
       }
 
   /**
@@ -36,7 +29,7 @@ class SignInViewModel(
           .signInWithGoogle(idToken)
           .onSuccess { response ->
             tokenRepository.saveTokens(response.accessToken, response.refreshToken)
-            _navEvents.send(SignInNavEvent.NavigateToMain)
+            navigate(SignInNavEvent.NavigateToMain)
           }
           .onFailure { error ->
             state.dispatch(
@@ -48,6 +41,5 @@ class SignInViewModel(
 
   fun dismissError() = state.dispatch(SignInAction.DismissError)
 
-  // UIEventHandler — not used for this screen; navigation is driven by navEvents.
-  override fun handleEvent(event: Unit) = Unit
+  override fun handleEvent(event: SignInNavEvent) = Unit
 }
