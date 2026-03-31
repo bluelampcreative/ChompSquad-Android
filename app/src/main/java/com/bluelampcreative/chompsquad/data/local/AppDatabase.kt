@@ -9,15 +9,16 @@ import com.bluelampcreative.chompsquad.data.local.entity.RecipeImageEntity
 import com.bluelampcreative.chompsquad.data.local.entity.StepEntity
 
 @Database(
-    entities = [
-        RecipeEntity::class,
-        RecipeImageEntity::class,
-        IngredientEntity::class,
-        StepEntity::class,
-    ],
+    entities =
+        [
+            RecipeEntity::class,
+            RecipeImageEntity::class,
+            IngredientEntity::class,
+            StepEntity::class,
+        ],
     version = 1,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun recipeDao(): RecipeDao
+  abstract fun recipeDao(): RecipeDao
 }

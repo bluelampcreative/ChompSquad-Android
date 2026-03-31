@@ -10,15 +10,15 @@ import org.koin.core.logger.Level
 
 class ChompSquadApplication : Application() {
 
-    override fun onCreate() {
-        super.onCreate()
-        startKoin {
-            androidLogger(if (BuildConfig.DEBUG) Level.DEBUG else Level.ERROR)
-            androidContext(this@ChompSquadApplication)
-            modules(
-                dataModule,
-                purchasesModule,
-            )
-        }
+  override fun onCreate() {
+    super.onCreate()
+    startKoin {
+      androidLogger(if (BuildConfig.DEBUG) Level.DEBUG else Level.ERROR)
+      androidContext(this@ChompSquadApplication)
+      modules(
+          dataModule,
+          purchasesModule,
+      )
     }
+  }
 }

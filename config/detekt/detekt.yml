@@ -1,0 +1,89 @@
+# Detekt 2.x configuration for ChompSquad Android
+# buildUponDefaultConfig = true in build.gradle.kts, so only overrides are needed here.
+# Full rule reference: https://detekt.dev/docs/rules/comments
+
+build:
+  maxIssues: 0           # Fail on any issue (new project — keep the bar high)
+  excludeCorrectable: false
+
+config:
+  validation: true
+  warningsAsErrors: false
+
+# ── Style overrides ───────────────────────────────────────────────────────────
+style:
+  MagicNumber:
+    # Allow common UI constants (dp values, animation durations, etc.) without
+    # requiring every literal to be a named constant.
+    active: true
+    ignoreNumbers:
+      - '-1'
+      - '0'
+      - '1'
+      - '2'
+      - '100'
+      - '1000'
+    ignoreAnnotated:
+      - 'Composable'
+      - 'Preview'
+  MaxLineLength:
+    active: true
+    maxLineLength: 120   # ktfmt wraps at 100 by default; allow up to 120 for readability
+  WildcardImport:
+    active: true
+    excludeImports:
+      - 'androidx.compose.foundation.layout.*'
+      - 'androidx.compose.material3.*'
+      - 'androidx.compose.ui.*'
+
+# ── Naming overrides ──────────────────────────────────────────────────────────
+naming:
+  FunctionNaming:
+    # Composable functions start with uppercase — allow PascalCase for @Composable
+    ignoreAnnotated:
+      - 'Composable'
+
+# ── Complexity overrides ──────────────────────────────────────────────────────
+complexity:
+  LongMethod:
+    # Composable functions describing full screens legitimately run long
+    ignoreAnnotated:
+      - 'Composable'
+  LongParameterList:
+    ignoreAnnotated:
+      - 'Composable'
+  TooManyFunctions:
+    ignoreAnnotated:
+      - 'Composable'
+
+# ── Compose rules (io.nlopez.compose.rules) ──────────────────────────────────
+# Full list: https://mrmans0n.github.io/compose-rules/detekt/
+Compose:
+  CompositionLocalAllowlist:
+    active: true
+    # Add allowed CompositionLocals here as the project grows, e.g.:
+    # allowedCompositionLocals: LocalContentColor
+  ModifierMissing:
+    active: true
+  ModifierReused:
+    active: true
+  ModifierWithoutDefault:
+    active: true
+  MultipleEmitters:
+    active: true
+  MutableStateAutoboxing:
+    active: true
+  MutableStateParam:
+    active: true
+  PreviewAnnotationNaming:
+    active: true
+  PreviewPublic:
+    active: true
+  RememberMissing:
+    active: true
+  UnstableCollections:
+    active: true
+  ViewModelForwarding:
+    active: true
+  ViewModelInjection:
+    active: true
