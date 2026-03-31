@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
   }
 }
 
-@PreviewScreenSizes
+@Suppress("ModifierMissing") // Root navigation composable — no modifier parameter needed
 @Composable
 fun ChompSquadApp() {
   var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
@@ -66,8 +66,14 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
   Text(text = "Hello $name!", modifier = modifier)
 }
 
+@PreviewScreenSizes
+@Composable
+private fun ChompSquadAppPreview() {
+  ChompSquadTheme { ChompSquadApp() }
+}
+
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
+private fun GreetingPreview() {
   ChompSquadTheme { Greeting("Android") }
 }

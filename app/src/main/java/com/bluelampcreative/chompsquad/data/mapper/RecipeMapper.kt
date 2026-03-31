@@ -1,3 +1,7 @@
+@file:Suppress(
+    "TooManyFunctions"
+) // Mapper files legitimately have one function per model conversion
+
 package com.bluelampcreative.chompsquad.data.mapper
 
 import com.bluelampcreative.chompsquad.data.local.entity.IngredientEntity

@@ -13,6 +13,7 @@ import com.bluelampcreative.chompsquad.data.local.entity.RecipeWithDetails
 import com.bluelampcreative.chompsquad.data.local.entity.StepEntity
 import kotlinx.coroutines.flow.Flow
 
+@Suppress("TooManyFunctions") // DAOs legitimately have one function per query/mutation
 @Dao
 interface RecipeDao {
 

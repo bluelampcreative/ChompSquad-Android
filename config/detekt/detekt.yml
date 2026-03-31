@@ -12,6 +12,11 @@ config:
 
 # ── Style overrides ───────────────────────────────────────────────────────────
 style:
+  UnusedPrivateMember:
+    # @Preview/@PreviewScreenSizes functions are invoked by Android Studio tooling — not dead code.
+    ignoreAnnotated:
+      - 'Preview'
+      - 'PreviewScreenSizes'
   MagicNumber:
     # Allow common UI constants (dp values, animation durations, etc.) without
     # requiring every literal to be a named constant.

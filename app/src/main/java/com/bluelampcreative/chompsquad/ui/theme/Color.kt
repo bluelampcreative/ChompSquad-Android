@@ -1,3 +1,5 @@
+@file:Suppress("MagicNumber") // Hex color literals are already named by their val declarations
+
 package com.bluelampcreative.chompsquad.ui.theme
 
 import androidx.compose.ui.graphics.Color
@@ -39,3 +41,27 @@ val darkBackground = Color(0xFF1A1C19)
 val darkOnBackground = Color(0xFFE2E3DD)
 val darkSurfaceVariant = Color(0xFF414940)
 val darkOutline = Color(0xFF8B9388)
+
+// ── Light-scheme inverse surface ─────────────────────────────────────────────
+val lightInverseSurface = Color(0xFF2F312E)
+val lightInverseOnSurface = Color(0xFFF0F1EB)
+
+// ── Brand green — deep tones used in container content roles ─────────────────
+val brandGreenUltraDark = Color(0xFF082008) // onPrimaryContainer / onSecondaryContainer (light)
+
+// ── Dark-scheme secondary (green) ────────────────────────────────────────────
+val darkSecondary = Color(0xFFA5D6A7)
+val darkOnSecondary = Color(0xFF1B3A1B)
+val darkSecondaryContainer = Color(0xFF2E7D32)
+val darkOnSecondaryContainer = Color(0xFFC8E6C9)
+
+// ── Dark-scheme tertiary (amber) ──────────────────────────────────────────────
+val darkTertiary = Color(0xFFFCD34D)
+val darkOnTertiary = Color(0xFF3B2000)
+val darkTertiaryContainer = Color(0xFF7C3500)
+val darkOnTertiaryContainer = Color(0xFFFFDDB3)
+
+// ── Dark-scheme error ─────────────────────────────────────────────────────────
+val darkError = Color(0xFFF2B8B5)
+val darkOnError = Color(0xFF601410)
+val darkErrorContainer = Color(0xFF8C1D18)

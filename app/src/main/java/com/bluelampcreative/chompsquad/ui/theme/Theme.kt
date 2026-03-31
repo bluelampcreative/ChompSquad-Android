@@ -5,7 +5,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 
 // Dynamic colour (Material You) is intentionally disabled — ChompSquad uses
 // fixed brand colours and must not be overridden by the system wallpaper.
@@ -15,11 +14,11 @@ private val LightColorScheme =
         primary = brandGreen,
         onPrimary = Color.White,
         primaryContainer = brandGreenContainer,
-        onPrimaryContainer = Color(0xFF082008),
+        onPrimaryContainer = brandGreenUltraDark,
         secondary = brandGreenMid,
         onSecondary = Color.White,
         secondaryContainer = brandGreenContainer,
-        onSecondaryContainer = Color(0xFF082008),
+        onSecondaryContainer = brandGreenUltraDark,
 
         // Tertiary = amber, debug/developer UI only.
         tertiary = debugAmber,
@@ -39,8 +38,8 @@ private val LightColorScheme =
         outline = neutralOutline,
         outlineVariant = neutralOutlineVariant,
         scrim = Color.Black,
-        inverseSurface = Color(0xFF2F312E),
-        inverseOnSurface = Color(0xFFF0F1EB),
+        inverseSurface = lightInverseSurface,
+        inverseOnSurface = lightInverseOnSurface,
         inversePrimary = brandGreenLight,
     )
 
@@ -50,17 +49,17 @@ private val DarkColorScheme =
         onPrimary = brandGreenOnDark,
         primaryContainer = brandGreenDark,
         onPrimaryContainer = brandGreenContainer,
-        secondary = Color(0xFFA5D6A7),
-        onSecondary = Color(0xFF1B3A1B),
-        secondaryContainer = Color(0xFF2E7D32),
-        onSecondaryContainer = Color(0xFFC8E6C9),
-        tertiary = Color(0xFFFCD34D),
-        onTertiary = Color(0xFF3B2000),
-        tertiaryContainer = Color(0xFF7C3500),
-        onTertiaryContainer = Color(0xFFFFDDB3),
-        error = Color(0xFFF2B8B5),
-        onError = Color(0xFF601410),
-        errorContainer = Color(0xFF8C1D18),
+        secondary = darkSecondary,
+        onSecondary = darkOnSecondary,
+        secondaryContainer = darkSecondaryContainer,
+        onSecondaryContainer = darkOnSecondaryContainer,
+        tertiary = darkTertiary,
+        onTertiary = darkOnTertiary,
+        tertiaryContainer = darkTertiaryContainer,
+        onTertiaryContainer = darkOnTertiaryContainer,
+        error = darkError,
+        onError = darkOnError,
+        errorContainer = darkErrorContainer,
         onErrorContainer = errorRedOnDark,
         background = darkBackground,
         onBackground = darkOnBackground,
