@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 /**
  * Sealed interface defining every top-level Navigation 3 destination in the app.
  *
- * Each concrete route must be annotated with [@Serializable] — Navigation 3 rc01 uses
+ * Each concrete route must be annotated with `@Serializable` — Navigation 3 rc01 uses
  * kotlinx.serialization to persist the backstack across configuration changes. [NavKey] is the
  * marker interface required by [androidx.navigation3.runtime.rememberNavBackStack].
  */
