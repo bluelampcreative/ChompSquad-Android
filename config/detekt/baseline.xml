@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Detekt baseline — lists known issues to suppress so new violations still fail the build.
+  Populated automatically via: ./gradlew detektBaseline
+  Currently empty — all pre-existing violations have been fixed.
+-->
+<SmellBaseline>
+    <ManuallySuppressedIssues/>
+    <CurrentIssues/>
+</SmellBaseline>

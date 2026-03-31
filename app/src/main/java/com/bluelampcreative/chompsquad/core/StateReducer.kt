@@ -12,34 +12,35 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.runningFold
 import kotlinx.coroutines.flow.stateIn
 
-interface IStateReducer<STATE, ACTION>: StateFlow<STATE> {
-    fun dispatch(action: ACTION)
+interface IStateReducer<STATE, ACTION> : StateFlow<STATE> {
+  fun dispatch(action: ACTION)
 }
 
 class StateReducer<STATE, ACTION>(
     initialState: STATE,
     reducedState: (STATE, ACTION) -> STATE,
     scope: CoroutineScope,
-): IStateReducer<STATE, ACTION> {
+) : IStateReducer<STATE, ACTION> {
 
-    override fun dispatch(action: ACTION) {
-        actions.trySend(action)
-    }
+  override fun dispatch(action: ACTION) {
+    actions.trySend(action)
+  }
 
-    private val actions = Channel<ACTION>(Channel.BUFFERED)
+  private val actions = Channel<ACTION>(Channel.BUFFERED)
 
-    private val stateFlow = actions
-        .receiveAsFlow()
-        .runningFold(initialState, reducedState)
-        .stateIn(scope, Eagerly, initialState)
+  private val stateFlow =
+      actions
+          .receiveAsFlow()
+          .runningFold(initialState, reducedState)
+          .stateIn(scope, Eagerly, initialState)
 
-    override val value: STATE
-        get() = stateFlow.value
+  override val value: STATE
+    get() = stateFlow.value
 
-    override val replayCache: List<STATE>
-        get() = stateFlow.replayCache
+  override val replayCache: List<STATE>
+    get() = stateFlow.replayCache
 
-    override suspend fun collect(collector: FlowCollector<STATE>): Nothing {
-        stateFlow.collect(collector)
-    }
+  override suspend fun collect(collector: FlowCollector<STATE>): Nothing {
+    stateFlow.collect(collector)
+  }
 }

@@ -5,11 +5,11 @@ package com.bluelampcreative.chompsquad.domain.model
 // They are decoupled from both the API DTO schema and the Room entity schema.
 
 enum class OriginType {
-    SCANNED,
-    MANUAL,
-    SOCIAL_SAVE,
-    /** Returned by the server for a type this client does not yet recognise. */
-    UNKNOWN,
+  SCANNED,
+  MANUAL,
+  SOCIAL_SAVE,
+  /** Returned by the server for a type this client does not yet recognise. */
+  UNKNOWN,
 }
 
 data class Recipe(
