@@ -1,5 +1,6 @@
 package com.bluelampcreative.chompsquad.feature.signup
 
+import android.app.Activity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -32,12 +33,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -47,8 +50,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.bluelampcreative.chompsquad.feature.signin.GoogleSignInButton
+import com.bluelampcreative.chompsquad.feature.signin.OrDivider
+import com.bluelampcreative.chompsquad.feature.signin.launchGoogleSignIn
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
 import com.bluelampcreative.chompsquad.ui.theme.ChompSquadTheme
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -58,6 +65,8 @@ fun SignUpScreen(
     viewModel: SignUpViewModel = koinViewModel(),
 ) {
   val viewState by viewModel.viewState.collectAsStateWithLifecycle()
+  val context = LocalContext.current
+  val scope = rememberCoroutineScope()
   val focusManager = LocalFocusManager.current
 
   var email by remember { mutableStateOf("") }
@@ -174,6 +183,30 @@ fun SignUpScreen(
           Text("Create account")
         }
       }
+
+      Spacer(modifier = Modifier.height(24.dp))
+
+      OrDivider()
+
+      Spacer(modifier = Modifier.height(24.dp))
+
+      GoogleSignInButton(
+          onClick = {
+            scope.launch {
+              launchGoogleSignIn(
+                  context = context as Activity,
+                  onTokenReceived = { idToken ->
+                    viewModel.handleEvent(SignUpUiEvent.OnGoogleTokenReceived(idToken))
+                  },
+                  onError = { message ->
+                    viewModel.handleEvent(SignUpUiEvent.OnGoogleSignInError(message))
+                  },
+              )
+            }
+          },
+          enabled = !viewState.isLoading,
+          modifier = Modifier.fillMaxWidth(),
+      )
 
       Spacer(modifier = Modifier.weight(1f))
       Spacer(modifier = Modifier.height(16.dp))
