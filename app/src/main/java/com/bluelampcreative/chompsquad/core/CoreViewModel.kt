@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
 
 /**
  * Base ViewModel for all ChompSquad screens.
@@ -35,8 +36,14 @@ abstract class CoreViewModel<StateType, ActionType : ViewAction, UIEventType>(
   /** Collect in the composable with [LaunchedEffect] to handle one-shot events. */
   val navEvents = _navEvents.receiveAsFlow()
 
-  /** Enqueues a one-shot event for the UI (navigation, snackbar, etc.). */
+  /**
+   * Enqueues a one-shot event for the UI (navigation, snackbar, etc.).
+   *
+   * Uses a suspending [send] launched in [viewModelScope] rather than [trySend], so events are
+   * never silently dropped if the buffer is full. The coroutine is automatically cancelled when the
+   * ViewModel is cleared, which is the correct behaviour — there is no UI to navigate to.
+   */
   protected fun navigate(event: NavEvent) {
-    _navEvents.trySend(event)
+    viewModelScope.launch { _navEvents.send(event) }
   }
 }
