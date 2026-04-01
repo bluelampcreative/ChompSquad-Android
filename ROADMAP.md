@@ -76,21 +76,21 @@ As the user base grows, ChompSquad evolves into a social cooking community where
 > Prerequisite gates before any code is written · **Target: v0.1.0 Play Internal Testing**
 
 - [ ] **0.1** `Design` — ~~Receive and review brand artwork~~ **Artwork received and analysed.** Confirmed assets: (a) app icon — bearded chef-dad head on radial-gradient green background, two versions (with translucent "D" letterform overlay and clean); (b) logotype — "Chomp Squad" italic display type, layered stroke effect (dark green outer shadow → white inline stroke → light-medium green fill), transparent background; (c) squad illustration — bearded dad (green shirt, chef hat, wooden spoon) + two daughters (pink shirts, cooking utensils), transparent/black background for compositing onto splash. Finalize mascot usage guidelines (safe zones, minimum sizes, splash compositing rules).
-- [ ] **0.2** `Design` — Define Compose design system — spacing tokens, corner radius (12dp cards, 8dp pills), semantic color mapping, Material Icons icon set. **Confirmed colour palette from brand artwork + iOS screenshots:** app icon background uses a radial gradient (`#72C472` centre → `#2C7A2C` outer edge); adopt the midpoint `~#4AA448` as `colorPrimary`. Logotype fill: `~#6BBF6B` (light-medium green — suitable for `colorSecondary` or on-dark accent); logotype shadow: `~#2B5A2B` (dark green). Light green surface `~#D4EDDA` (tag chips, recipe placeholder tiles). Background `~#F2F2F7`. Brand secondary: hot pink `~#E84A8A` (kids' shirts in squad illustration — reserve for future accent/promo use, not primary UI). Semantic roles: `colorPrimary` = brand green, `colorError` = destructive actions, `colorTertiary` = dev/debug amber. **Body-title layout rule:** Scan, Planner, and Profile root screens carry no top app bar — the screen title is the first element in the scrollable content body. Only pushed destinations (e.g. Settings) use a standard top app bar with back navigation.
-- [ ] **0.3** `Setup` — Set up Android project — Jetpack Compose, min SDK 29 (Android 10), folder structure, Gradle dependency management
-- [ ] **0.4** `Setup` — Configure Google Play Developer account — application ID, signing config, permissions (camera, photo library, internet, notifications)
-- [ ] **0.5** `Setup` — Integrate RevenueCat SDK — configure products, entitlements, and developer user with pro-tier override
-- [ ] **0.6** `Data` — Define canonical recipe data model in Kotlin — all schema fields, serialization (kotlinx.serialization or Gson), Room entity + DAO
-- [ ] **0.6b** `Setup` — Introduce code formatting and static analysis — **ktfmt** (via Spotless Gradle plugin) for zero-config Kotlin formatting; **Detekt** with `mrmans0n/compose-rules` for static analysis including Compose-specific checks; **slackhq/compose-lints** for Android Lint Compose rules; wire all three into `./gradlew check`; add a `./gradlew spotlessCheck` gate to the CI workflow (Phase 5.3)
+- [x] **0.2** `Design` — Define Compose design system — spacing tokens, corner radius (12dp cards, 8dp pills), semantic color mapping, Material Icons icon set. **Confirmed colour palette from brand artwork + iOS screenshots:** app icon background uses a radial gradient (`#72C472` centre → `#2C7A2C` outer edge); adopt the midpoint `~#4AA448` as `colorPrimary`. Logotype fill: `~#6BBF6B` (light-medium green — suitable for `colorSecondary` or on-dark accent); logotype shadow: `~#2B5A2B` (dark green). Light green surface `~#D4EDDA` (tag chips, recipe placeholder tiles). Background `~#F2F2F7`. Brand secondary: hot pink `~#E84A8A` (kids' shirts in squad illustration — reserve for future accent/promo use, not primary UI). Semantic roles: `colorPrimary` = brand green, `colorError` = destructive actions, `colorTertiary` = dev/debug amber. **Body-title layout rule:** Scan, Planner, and Profile root screens carry no top app bar — the screen title is the first element in the scrollable content body. Only pushed destinations (e.g. Settings) use a standard top app bar with back navigation.
+- [x] **0.3** `Setup` — Set up Android project — Jetpack Compose, min SDK 29 (Android 10), folder structure, Gradle dependency management
+- [x] **0.4** `Setup` — Configure Google Play Developer account — application ID, signing config, permissions (camera, photo library, internet, notifications)
+- [x] **0.5** `Setup` — Integrate RevenueCat SDK — configure products, entitlements, and developer user with pro-tier override
+- [x] **0.6** `Data` — Define canonical recipe data model in Kotlin — all schema fields, serialization (kotlinx.serialization or Gson), Room entity + DAO
+- [x] **0.6b** `Setup` — Introduce code formatting and static analysis — **ktfmt** (via Spotless Gradle plugin) for zero-config Kotlin formatting; **Detekt** with `mrmans0n/compose-rules` for static analysis including Compose-specific checks; **slackhq/compose-lints** for Android Lint Compose rules; wire all three into `./gradlew check`; add a `./gradlew spotlessCheck` gate to the CI workflow (Phase 5.3)
 
 ---
 
 ## Phase 1 — Authentication & Account
 > User identity, onboarding, and subscription scaffolding · **Target: v0.1.0 Play Internal Testing**
 
-- [ ] **1.1** `UI` — Onboarding flow — mascot-driven welcome screens with brand green + golden yellow palette, value proposition, sign up / sign in CTA
-- [ ] **1.2** `Auth` — Sign in with Google — `POST /v1/auth/google` confirmed in API schema. Request body: `{ id_token: string }` (note: `id_token`, not `identity_token`). Response: `TokenResponse`. Use Credential Manager API to obtain the Google ID token; send to backend; backend handles new vs. returning users.
-- [ ] **1.3** `Auth` — Email/password auth — registration, login, forgot password, email verification flow
+- [x] **1.1** `UI` — Onboarding flow — mascot-driven welcome screens with brand green + golden yellow palette, value proposition, sign up / sign in CTA
+- [x] **1.2** `Auth` — Sign in with Google — `POST /v1/auth/google` confirmed in API schema. Request body: `{ id_token: string }` (note: `id_token`, not `identity_token`). Response: `TokenResponse`. Use Credential Manager API to obtain the Google ID token; send to backend; backend handles new vs. returning users.
+- [x] **1.3** `Auth` — Email/password auth — registration, login, forgot password, email verification flow
 - [ ] **1.4** `Data` — JWT token management — secure storage in Preferences DataStore (two string keys, encrypted via Android Keystore — no protobuf plugin required), refresh logic, session expiry handling
 - [ ] **1.5** `UI` — User profile screen — body-title layout ("Profile" bold, no top app bar). Three stacked content areas: (1) identity card — circular avatar with green camera-badge overlay for photo editing, bold display name, gray email, conditional dark pill `Developer` badge (debug / developer-tier builds only); (2) stats card — two-column split (`Scans This Month` | `Scans Remaining`) with a vertical divider; remaining count shows as `∞` in primary green for pro/developer tier, integer for free tier; (3) settings-row cards — `Developer Settings` (amber icon + text, debug builds only), `Send Feedback`, `Settings` — each a tappable full-width row with trailing chevron
 - [ ] **1.6** `Subscriptions` — Subscription entitlement wiring — RevenueCat entitlement check on launch, gate pro features, developer tier bypass
@@ -233,8 +233,8 @@ As the user base grows, ChompSquad evolves into a social cooking community where
 
 | Phase | Name | Done | Total | Target |
 |---|---|---|---|---|
-| 0 | Pre-development foundations | 0 | 7 | v0.1.0 |
-| 1 | Authentication & account | 0 | 8 | v0.1.0 |
+| 0 | Pre-development foundations | 6 | 7 | v0.1.0 |
+| 1 | Authentication & account | 3 | 8 | v0.1.0 |
 | 2 | Recipe scanner | 0 | 9 | v0.1.0 |
 | 3 | Cookbook & collection | 0 | 9 | v0.1.0 |
 | 4 | Polish & pre-release hardening | 0 | 7 | v0.1.0 / v1.0.0 |

@@ -20,3 +20,7 @@ data class TokenResponseDto(
     @SerialName("access_token") val accessToken: String,
     @SerialName("refresh_token") val refreshToken: String,
 )
+
+@Serializable data class RefreshRequestDto(@SerialName("refresh_token") val refreshToken: String)
+
+@Serializable data class LogoutRequestDto(@SerialName("refresh_token") val refreshToken: String)
