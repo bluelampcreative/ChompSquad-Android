@@ -38,9 +38,7 @@ fun ChompSquadApp() {
                   onNavigateToSignUp = { backStack += AppRoute.SignUp },
               )
             }
-            entry<AppRoute.SignIn> {
-              SignInScreen(onNavEvent = { backStack.handleNavEvent(it) })
-            }
+            entry<AppRoute.SignIn> { SignInScreen(onNavEvent = { backStack.handleNavEvent(it) }) }
             entry<AppRoute.SignUp> {
               // TODO(task 1.3): implement Sign-Up screen
               AuthPlaceholderScreen(label = "Sign Up")
