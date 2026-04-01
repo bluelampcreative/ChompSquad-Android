@@ -16,25 +16,44 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -63,13 +82,25 @@ fun SignInScreen(
   val viewState by viewModel.viewState.collectAsStateWithLifecycle()
   val context = LocalContext.current
   val scope = rememberCoroutineScope()
+  val focusManager = LocalFocusManager.current
 
-  // rememberUpdatedState ensures the LaunchedEffect always calls the latest lambda even though
-  // the effect key is stable (Unit).
+  var email by remember { mutableStateOf("") }
+  var password by remember { mutableStateOf("") }
+  var showPassword by remember { mutableStateOf(false) }
+
+  val passwordFocusRequester = remember { FocusRequester() }
+
   val currentOnNavEvent by rememberUpdatedState(onNavEvent)
-
-  // Relay one-shot nav intents from the VM to the navigation layer — no routing logic here.
   LaunchedEffect(Unit) { viewModel.navEvents.collect { event -> currentOnNavEvent(event) } }
+
+  val submitEnabled = email.isNotBlank() && password.isNotBlank() && !viewState.isLoading
+
+  fun submitEmailSignIn() {
+    if (submitEnabled) {
+      focusManager.clearFocus()
+      viewModel.handleEvent(SignInUiEvent.OnEmailSignInSubmitted(email.trim(), password))
+    }
+  }
 
   Box(modifier = modifier.fillMaxSize()) {
     Column(
@@ -77,19 +108,17 @@ fun SignInScreen(
             Modifier.fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
       Box(modifier = Modifier.fillMaxWidth()) {
         IconButton(onClick = { onNavEvent(NavEvent.GoBack) }) {
-          Icon(
-              imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-              contentDescription = "Back",
-          )
+          Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
         }
       }
 
-      Spacer(modifier = Modifier.weight(1f))
+      Spacer(modifier = Modifier.height(24.dp))
 
       Text(
           text = "Welcome back",
@@ -106,10 +135,63 @@ fun SignInScreen(
           color = MaterialTheme.colorScheme.onSurfaceVariant,
       )
 
-      Spacer(modifier = Modifier.weight(1f))
+      Spacer(modifier = Modifier.height(32.dp))
 
-      // Credential Manager is a platform UI concern requiring Activity context — it lives here,
-      // not in the ViewModel. Once a token is obtained, it is handed off via handleEvent.
+      OutlinedTextField(
+          value = email,
+          onValueChange = { email = it },
+          label = { Text("Email") },
+          singleLine = true,
+          keyboardOptions =
+              KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+          keyboardActions = KeyboardActions(onNext = { passwordFocusRequester.requestFocus() }),
+          modifier = Modifier.fillMaxWidth(),
+      )
+
+      Spacer(modifier = Modifier.height(12.dp))
+
+      OutlinedTextField(
+          value = password,
+          onValueChange = { password = it },
+          label = { Text("Password") },
+          singleLine = true,
+          visualTransformation =
+              if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+          keyboardOptions =
+              KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+          keyboardActions = KeyboardActions(onDone = { submitEmailSignIn() }),
+          trailingIcon = {
+            IconButton(onClick = { showPassword = !showPassword }) {
+              Icon(
+                  imageVector =
+                      if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                  contentDescription = if (showPassword) "Hide password" else "Show password",
+              )
+            }
+          },
+          modifier = Modifier.fillMaxWidth().focusRequester(passwordFocusRequester),
+      )
+
+      Spacer(modifier = Modifier.height(24.dp))
+
+      Button(
+          onClick = { submitEmailSignIn() },
+          enabled = submitEnabled,
+          modifier = Modifier.fillMaxWidth(),
+      ) {
+        if (viewState.isLoading) {
+          CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+        } else {
+          Text("Sign in")
+        }
+      }
+
+      Spacer(modifier = Modifier.height(24.dp))
+
+      OrDivider()
+
+      Spacer(modifier = Modifier.height(24.dp))
+
       GoogleSignInButton(
           onClick = {
             scope.launch {
@@ -124,11 +206,18 @@ fun SignInScreen(
               )
             }
           },
-          isLoading = viewState.isLoading,
+          enabled = !viewState.isLoading,
           modifier = Modifier.fillMaxWidth(),
       )
 
-      Spacer(modifier = Modifier.height(24.dp))
+      Spacer(modifier = Modifier.weight(1f))
+      Spacer(modifier = Modifier.height(16.dp))
+
+      TextButton(onClick = { onNavEvent(NavEvent.NavigateToSignUp) }) {
+        Text("New here? Create an account")
+      }
+
+      Spacer(modifier = Modifier.height(8.dp))
     }
   }
 
@@ -146,35 +235,43 @@ fun SignInScreen(
   }
 }
 
+// ── Shared composables (reused by SignUpScreen) ───────────────────────────────
+
 @Composable
-private fun GoogleSignInButton(
-    onClick: () -> Unit,
-    isLoading: Boolean,
-    modifier: Modifier = Modifier,
-) {
-  OutlinedButton(
-      onClick = onClick,
-      modifier = modifier,
-      enabled = !isLoading,
+internal fun OrDivider(modifier: Modifier = Modifier) {
+  Row(
+      modifier = modifier.fillMaxWidth(),
+      verticalAlignment = Alignment.CenterVertically,
   ) {
-    if (isLoading) {
-      CircularProgressIndicator(
-          modifier = Modifier.size(20.dp),
-          strokeWidth = 2.dp,
+    HorizontalDivider(modifier = Modifier.weight(1f))
+    Text(
+        text = "or",
+        modifier = Modifier.padding(horizontal = 16.dp),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    HorizontalDivider(modifier = Modifier.weight(1f))
+  }
+}
+
+@Composable
+internal fun GoogleSignInButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+  OutlinedButton(onClick = onClick, modifier = modifier, enabled = enabled) {
+    Row(
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Image(
+          painter = painterResource(R.drawable.ic_google_logo),
+          contentDescription = null,
+          modifier = Modifier.size(18.dp),
       )
-    } else {
-      Row(
-          horizontalArrangement = Arrangement.Center,
-          verticalAlignment = Alignment.CenterVertically,
-      ) {
-        Image(
-            painter = painterResource(R.drawable.ic_google_logo),
-            contentDescription = null,
-            modifier = Modifier.size(18.dp),
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text("Sign in with Google")
-      }
+      Spacer(modifier = Modifier.width(8.dp))
+      Text("Sign in with Google")
     }
   }
 }
@@ -186,7 +283,7 @@ private fun GoogleSignInButton(
  * token is delivered via [onTokenReceived]; on cancellation nothing happens; on any other failure
  * [onError] is called with a human-readable message.
  */
-private suspend fun launchGoogleSignIn(
+internal suspend fun launchGoogleSignIn(
     context: Activity,
     onTokenReceived: (idToken: String) -> Unit,
     onError: (message: String) -> Unit,
@@ -224,30 +321,5 @@ private suspend fun launchGoogleSignIn(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun SignInScreenPreview() {
-  ChompSquadTheme {
-    Column(
-        modifier =
-            Modifier.fillMaxSize()
-                .statusBarsPadding()
-                .navigationBarsPadding()
-                .padding(horizontal = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-      Text(
-          text = "Welcome back",
-          style = MaterialTheme.typography.headlineLarge,
-          textAlign = TextAlign.Center,
-      )
-      Spacer(modifier = Modifier.height(8.dp))
-      Text(
-          text = "Sign in to access your recipes",
-          style = MaterialTheme.typography.bodyLarge,
-          textAlign = TextAlign.Center,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
-      Spacer(modifier = Modifier.height(32.dp))
-      GoogleSignInButton(onClick = {}, isLoading = false, modifier = Modifier.fillMaxWidth())
-    }
-  }
+  ChompSquadTheme { SignInScreen(onNavEvent = {}) }
 }

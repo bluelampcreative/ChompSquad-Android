@@ -23,9 +23,27 @@ class SignInViewModel(
 
   override fun handleEvent(event: SignInUiEvent) {
     when (event) {
+      is SignInUiEvent.OnEmailSignInSubmitted -> signInWithEmail(event.email, event.password)
       is SignInUiEvent.OnGoogleTokenReceived -> signInWithGoogle(event.idToken)
       is SignInUiEvent.OnSignInError -> state.dispatch(SignInAction.ShowError(event.message))
       is SignInUiEvent.OnDismissError -> state.dispatch(SignInAction.DismissError)
+    }
+  }
+
+  private fun signInWithEmail(email: String, password: String) {
+    viewModelScope.launch {
+      state.dispatch(SignInAction.StartLoading)
+      authApi
+          .signInWithEmail(email, password)
+          .onSuccess { response ->
+            tokenRepository.saveTokens(response.accessToken, response.refreshToken)
+            navigate(NavEvent.NavigateToMain)
+          }
+          .onFailure { error ->
+            state.dispatch(
+                SignInAction.ShowError(error.message ?: "Sign in failed. Please try again.")
+            )
+          }
     }
   }
 

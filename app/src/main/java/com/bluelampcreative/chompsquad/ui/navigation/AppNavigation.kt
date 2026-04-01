@@ -14,13 +14,13 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.bluelampcreative.chompsquad.feature.onboarding.OnboardingScreen
 import com.bluelampcreative.chompsquad.feature.signin.SignInScreen
+import com.bluelampcreative.chompsquad.feature.signup.SignUpScreen
 
 /**
  * Root composable for the app. Sets up a Navigation 3 [NavDisplay] starting at
  * [AppRoute.Onboarding].
  *
- * SignIn is implemented in task 1.2. SignUp and the Main shell are stubs for tasks 1.3 and 3.8
- * respectively.
+ * The Main shell is a stub for task 3.8.
  */
 @Suppress("ModifierMissing") // Root navigation composable — no modifier parameter needed
 @Composable
@@ -39,10 +39,7 @@ fun ChompSquadApp() {
               )
             }
             entry<AppRoute.SignIn> { SignInScreen(onNavEvent = { backStack.handleNavEvent(it) }) }
-            entry<AppRoute.SignUp> {
-              // TODO(task 1.3): implement Sign-Up screen
-              AuthPlaceholderScreen(label = "Sign Up")
-            }
+            entry<AppRoute.SignUp> { SignUpScreen(onNavEvent = { backStack.handleNavEvent(it) }) }
             entry<AppRoute.Main> {
               // TODO(task 3.8): implement bottom-nav shell
               AuthPlaceholderScreen(label = "Main App")
@@ -57,6 +54,14 @@ fun ChompSquadApp() {
  *
  * Add new [NavEvent] cases here as features introduce them — callers need no changes.
  */
+/** Placeholder until the bottom-nav shell is implemented in task 3.8. */
+@Composable
+private fun AuthPlaceholderScreen(label: String) {
+  Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Text(text = label, style = MaterialTheme.typography.headlineMedium)
+  }
+}
+
 private fun NavBackStack<NavKey>.handleNavEvent(event: NavEvent) {
   when (event) {
     NavEvent.GoBack -> removeLastOrNull()
@@ -64,13 +69,15 @@ private fun NavBackStack<NavKey>.handleNavEvent(event: NavEvent) {
       clear()
       this += AppRoute.Main
     }
-  }
-}
-
-/** Temporary placeholder composable used until auth screens are implemented in tasks 1.3+. */
-@Composable
-private fun AuthPlaceholderScreen(label: String) {
-  Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-    Text(text = label, style = MaterialTheme.typography.headlineMedium)
+    // Replace the current auth screen so back always returns to Onboarding,
+    // never creates Sign In → Sign Up → Sign In chains.
+    NavEvent.NavigateToSignIn -> {
+      removeLastOrNull()
+      this += AppRoute.SignIn
+    }
+    NavEvent.NavigateToSignUp -> {
+      removeLastOrNull()
+      this += AppRoute.SignUp
+    }
   }
 }
