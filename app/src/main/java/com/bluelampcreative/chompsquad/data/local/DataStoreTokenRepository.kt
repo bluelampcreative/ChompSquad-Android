@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
+import java.io.IOException
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
@@ -25,13 +26,13 @@ class DataStoreTokenRepository(
 
   override suspend fun getAccessToken(): String? =
       dataStore.data
-          .catch { emit(emptyPreferences()) }
+          .catch { e -> if (e is IOException) emit(emptyPreferences()) else throw e }
           .map { prefs -> prefs[Keys.ACCESS_TOKEN]?.let { encryptor.decrypt(it) } }
           .firstOrNull()
 
   override suspend fun getRefreshToken(): String? =
       dataStore.data
-          .catch { emit(emptyPreferences()) }
+          .catch { e -> if (e is IOException) emit(emptyPreferences()) else throw e }
           .map { prefs -> prefs[Keys.REFRESH_TOKEN]?.let { encryptor.decrypt(it) } }
           .firstOrNull()
 
