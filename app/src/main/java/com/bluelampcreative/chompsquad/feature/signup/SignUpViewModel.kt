@@ -3,6 +3,7 @@ package com.bluelampcreative.chompsquad.feature.signup
 import androidx.lifecycle.viewModelScope
 import com.bluelampcreative.chompsquad.core.CoreViewModel
 import com.bluelampcreative.chompsquad.data.local.TokenRepository
+import com.bluelampcreative.chompsquad.data.purchases.SubscriptionRepository
 import com.bluelampcreative.chompsquad.data.remote.AuthApi
 import com.bluelampcreative.chompsquad.data.remote.toAuthErrorMessage
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
@@ -13,6 +14,7 @@ import org.koin.core.annotation.KoinViewModel
 class SignUpViewModel(
     private val authApi: AuthApi,
     private val tokenRepository: TokenRepository,
+    private val subscriptionRepository: SubscriptionRepository,
 ) : CoreViewModel<SignUpViewState, SignUpAction, SignUpUiEvent>(SignUpViewState()) {
 
   override fun reducer(state: SignUpViewState, action: SignUpAction): SignUpViewState =
@@ -38,6 +40,7 @@ class SignUpViewModel(
           .signInWithGoogle(idToken)
           .onSuccess { response ->
             tokenRepository.saveTokens(response.accessToken, response.refreshToken)
+            subscriptionRepository.refreshEntitlements()
             navigate(NavEvent.NavigateToMain)
           }
           .onFailure { error ->
@@ -58,6 +61,7 @@ class SignUpViewModel(
           .signUp(email, password, screenName)
           .onSuccess { response ->
             tokenRepository.saveTokens(response.accessToken, response.refreshToken)
+            subscriptionRepository.refreshEntitlements()
             navigate(NavEvent.NavigateToMain)
           }
           .onFailure { error ->
