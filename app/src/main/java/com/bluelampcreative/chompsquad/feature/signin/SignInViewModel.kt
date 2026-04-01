@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.bluelampcreative.chompsquad.core.CoreViewModel
 import com.bluelampcreative.chompsquad.data.local.TokenRepository
 import com.bluelampcreative.chompsquad.data.remote.AuthApi
+import com.bluelampcreative.chompsquad.data.remote.toAuthErrorMessage
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
@@ -23,9 +24,29 @@ class SignInViewModel(
 
   override fun handleEvent(event: SignInUiEvent) {
     when (event) {
+      is SignInUiEvent.OnEmailSignInSubmitted -> signInWithEmail(event.email, event.password)
       is SignInUiEvent.OnGoogleTokenReceived -> signInWithGoogle(event.idToken)
       is SignInUiEvent.OnSignInError -> state.dispatch(SignInAction.ShowError(event.message))
       is SignInUiEvent.OnDismissError -> state.dispatch(SignInAction.DismissError)
+    }
+  }
+
+  private fun signInWithEmail(email: String, password: String) {
+    viewModelScope.launch {
+      state.dispatch(SignInAction.StartLoading)
+      authApi
+          .signInWithEmail(email, password)
+          .onSuccess { response ->
+            tokenRepository.saveTokens(response.accessToken, response.refreshToken)
+            navigate(NavEvent.NavigateToMain)
+          }
+          .onFailure { error ->
+            state.dispatch(
+                SignInAction.ShowError(
+                    error.toAuthErrorMessage("Sign in failed. Please try again.")
+                )
+            )
+          }
     }
   }
 
@@ -48,7 +69,9 @@ class SignInViewModel(
           }
           .onFailure { error ->
             state.dispatch(
-                SignInAction.ShowError(error.message ?: "Sign in failed. Please try again.")
+                SignInAction.ShowError(
+                    error.toAuthErrorMessage("Sign in failed. Please try again.")
+                )
             )
           }
     }
