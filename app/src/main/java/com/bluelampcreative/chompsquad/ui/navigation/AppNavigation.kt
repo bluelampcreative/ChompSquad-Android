@@ -38,11 +38,15 @@ fun ChompSquadApp() {
             }
             entry<AppRoute.SignIn> {
               SignInScreen(
-                  onNavigateToMain = {
-                    backStack.clear()
-                    backStack += AppRoute.Main
+                  onNavEvent = { event ->
+                    when (event) {
+                      NavEvent.GoBack -> backStack.removeLastOrNull()
+                      NavEvent.NavigateToMain -> {
+                        backStack.clear()
+                        backStack += AppRoute.Main
+                      }
+                    }
                   },
-                  onNavigateBack = { backStack.removeLastOrNull() },
               )
             }
             entry<AppRoute.SignUp> {

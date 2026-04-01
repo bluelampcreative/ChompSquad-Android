@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.bluelampcreative.chompsquad.core.CoreViewModel
 import com.bluelampcreative.chompsquad.data.local.TokenRepository
 import com.bluelampcreative.chompsquad.data.remote.AuthApi
+import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
 
@@ -11,7 +12,7 @@ import org.koin.core.annotation.KoinViewModel
 class SignInViewModel(
     private val authApi: AuthApi,
     private val tokenRepository: TokenRepository,
-) : CoreViewModel<SignInViewState, SignInAction, SignInNavEvent>(SignInViewState()) {
+) : CoreViewModel<SignInViewState, SignInAction, SignInUiEvent>(SignInViewState()) {
 
   override fun reducer(state: SignInViewState, action: SignInAction): SignInViewState =
       when (action) {
@@ -20,18 +21,30 @@ class SignInViewModel(
         is SignInAction.DismissError -> state.copy(errorMessage = null)
       }
 
+  override fun handleEvent(event: SignInUiEvent) {
+    when (event) {
+      is SignInUiEvent.OnGoogleTokenReceived -> signInWithGoogle(event.idToken)
+      is SignInUiEvent.OnSignInError -> state.dispatch(SignInAction.ShowError(event.message))
+      is SignInUiEvent.OnDismissError -> state.dispatch(SignInAction.DismissError)
+    }
+  }
+
   /**
-   * Called from the composable once the Credential Manager yields a Google ID token. Sends the
-   * token to the backend and stores the resulting token pair via [TokenRepository].
+   * Exchanges a Google ID token for a ChompSquad access + refresh token pair, then navigates to the
+   * main screen on success.
+   *
+   * The Google ID token is obtained by the composable via the Credential Manager API (which
+   * requires an [android.app.Activity] context). The composable hands the token here via
+   * [handleEvent] once the platform flow completes.
    */
-  fun signInWithGoogle(idToken: String) {
+  private fun signInWithGoogle(idToken: String) {
     viewModelScope.launch {
       state.dispatch(SignInAction.StartLoading)
       authApi
           .signInWithGoogle(idToken)
           .onSuccess { response ->
             tokenRepository.saveTokens(response.accessToken, response.refreshToken)
-            navigate(SignInNavEvent.NavigateToMain)
+            navigate(NavEvent.NavigateToMain)
           }
           .onFailure { error ->
             state.dispatch(
@@ -40,8 +53,4 @@ class SignInViewModel(
           }
     }
   }
-
-  fun dismissError() = state.dispatch(SignInAction.DismissError)
-
-  override fun handleEvent(event: SignInNavEvent) = Unit
 }

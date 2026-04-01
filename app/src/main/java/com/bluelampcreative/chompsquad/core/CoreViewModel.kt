@@ -2,6 +2,7 @@ package com.bluelampcreative.chompsquad.core
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 
@@ -29,13 +30,13 @@ abstract class CoreViewModel<StateType, ActionType : ViewAction, UIEventType>(
 
   // ── One-shot UI events (VM → UI) ──────────────────────────────────────────
 
-  private val _navEvents = Channel<UIEventType>(Channel.BUFFERED)
+  private val _navEvents = Channel<NavEvent>(Channel.BUFFERED)
 
   /** Collect in the composable with [LaunchedEffect] to handle one-shot events. */
   val navEvents = _navEvents.receiveAsFlow()
 
   /** Enqueues a one-shot event for the UI (navigation, snackbar, etc.). */
-  protected fun navigate(event: UIEventType) {
+  protected fun navigate(event: NavEvent) {
     _navEvents.trySend(event)
   }
 }

@@ -44,6 +44,7 @@ import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bluelampcreative.chompsquad.BuildConfig
 import com.bluelampcreative.chompsquad.R
+import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
 import com.bluelampcreative.chompsquad.ui.theme.ChompSquadTheme
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -55,27 +56,20 @@ private const val TAG = "SignInScreen"
 
 @Composable
 fun SignInScreen(
-    onNavigateToMain: () -> Unit,
-    onNavigateBack: () -> Unit,
+    onNavEvent: (NavEvent) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SignInViewModel = koinViewModel(),
 ) {
-  val uiState by viewModel.viewState.collectAsStateWithLifecycle()
+  val viewState by viewModel.viewState.collectAsStateWithLifecycle()
   val context = LocalContext.current
   val scope = rememberCoroutineScope()
 
-  // rememberUpdatedState ensures the LaunchedEffect always calls the latest lambda reference
-  // even though the effect key is stable (Unit).
-  val currentOnNavigateToMain by rememberUpdatedState(onNavigateToMain)
+  // rememberUpdatedState ensures the LaunchedEffect always calls the latest lambda even though
+  // the effect key is stable (Unit).
+  val currentOnNavEvent by rememberUpdatedState(onNavEvent)
 
-  // One-shot navigation events from the ViewModel.
-  LaunchedEffect(Unit) {
-    viewModel.navEvents.collect { event ->
-      when (event) {
-        SignInNavEvent.NavigateToMain -> currentOnNavigateToMain()
-      }
-    }
-  }
+  // Relay one-shot nav intents from the VM to the navigation layer — no routing logic here.
+  LaunchedEffect(Unit) { viewModel.navEvents.collect { event -> currentOnNavEvent(event) } }
 
   Box(modifier = modifier.fillMaxSize()) {
     Column(
@@ -86,9 +80,8 @@ fun SignInScreen(
                 .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-      // Back button
       Box(modifier = Modifier.fillMaxWidth()) {
-        IconButton(onClick = onNavigateBack) {
+        IconButton(onClick = { onNavEvent(NavEvent.GoBack) }) {
           Icon(
               imageVector = Icons.AutoMirrored.Filled.ArrowBack,
               contentDescription = "Back",
@@ -98,7 +91,6 @@ fun SignInScreen(
 
       Spacer(modifier = Modifier.weight(1f))
 
-      // Heading
       Text(
           text = "Welcome back",
           style = MaterialTheme.typography.headlineLarge,
@@ -116,20 +108,23 @@ fun SignInScreen(
 
       Spacer(modifier = Modifier.weight(1f))
 
-      // Google Sign-In button
+      // Credential Manager is a platform UI concern requiring Activity context — it lives here,
+      // not in the ViewModel. Once a token is obtained, it is handed off via handleEvent.
       GoogleSignInButton(
           onClick = {
             scope.launch {
               launchGoogleSignIn(
                   context = context as Activity,
-                  onTokenReceived = viewModel::signInWithGoogle,
+                  onTokenReceived = { idToken ->
+                    viewModel.handleEvent(SignInUiEvent.OnGoogleTokenReceived(idToken))
+                  },
                   onError = { message ->
-                    viewModel.viewState.dispatch(SignInAction.ShowError(message))
+                    viewModel.handleEvent(SignInUiEvent.OnSignInError(message))
                   },
               )
             }
           },
-          isLoading = uiState.isLoading,
+          isLoading = viewState.isLoading,
           modifier = Modifier.fillMaxWidth(),
       )
 
@@ -137,13 +132,16 @@ fun SignInScreen(
     }
   }
 
-  // Error dialog
-  uiState.errorMessage?.let { message ->
+  viewState.errorMessage?.let { message ->
     AlertDialog(
-        onDismissRequest = viewModel::dismissError,
+        onDismissRequest = { viewModel.handleEvent(SignInUiEvent.OnDismissError) },
         title = { Text("Sign in failed") },
         text = { Text(message) },
-        confirmButton = { TextButton(onClick = viewModel::dismissError) { Text("OK") } },
+        confirmButton = {
+          TextButton(onClick = { viewModel.handleEvent(SignInUiEvent.OnDismissError) }) {
+            Text("OK")
+          }
+        },
     )
   }
 }
@@ -184,7 +182,9 @@ private fun GoogleSignInButton(
 /**
  * Launches the Credential Manager bottom sheet to obtain a Google ID token.
  *
- * Must be called from a composable coroutine scope with an [Activity] context.
+ * Must be called from a composable coroutine scope with an [Activity] context. On success the ID
+ * token is delivered via [onTokenReceived]; on cancellation nothing happens; on any other failure
+ * [onError] is called with a human-readable message.
  */
 private suspend fun launchGoogleSignIn(
     context: Activity,
@@ -215,10 +215,7 @@ private suspend fun launchGoogleSignIn(
       }
       .onFailure { error ->
         when (error) {
-          is GetCredentialCancellationException -> {
-            // User dismissed the sheet — silent, no error shown.
-            Log.d(TAG, "Google Sign-In cancelled by user")
-          }
+          is GetCredentialCancellationException -> Log.d(TAG, "Google Sign-In cancelled by user")
           else -> onError(error.message ?: "Sign in failed. Please try again.")
         }
       }

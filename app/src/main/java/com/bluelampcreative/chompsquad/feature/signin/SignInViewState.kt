@@ -15,7 +15,18 @@ sealed interface SignInAction : ViewAction {
   data object DismissError : SignInAction
 }
 
-/** One-shot navigation events emitted by [SignInViewModel]. */
-sealed interface SignInNavEvent {
-  data object NavigateToMain : SignInNavEvent
+/**
+ * UI events flowing FROM the composable INTO [SignInViewModel].
+ * - [OnGoogleTokenReceived]: Credential Manager yielded a Google ID token; begin the backend
+ *   exchange.
+ * - [OnSignInError]: A platform-level error occurred during the Credential Manager flow (wrong
+ *   credential type, unexpected failure, etc.).
+ * - [OnDismissError]: The user dismissed the error dialog.
+ */
+sealed interface SignInUiEvent {
+  data class OnGoogleTokenReceived(val idToken: String) : SignInUiEvent
+
+  data class OnSignInError(val message: String) : SignInUiEvent
+
+  data object OnDismissError : SignInUiEvent
 }
