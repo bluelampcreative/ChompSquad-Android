@@ -9,4 +9,7 @@ interface TokenRepository {
   suspend fun getRefreshToken(): String?
 
   suspend fun clearTokens()
+
+  /** Returns true only when both access and refresh tokens are present. */
+  suspend fun hasValidSession(): Boolean
 }

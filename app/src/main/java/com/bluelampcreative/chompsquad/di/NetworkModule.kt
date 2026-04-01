@@ -9,9 +9,11 @@ import com.bluelampcreative.chompsquad.data.remote.dto.TokenResponseDto
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
+import io.ktor.client.plugins.auth.providers.markAsRefreshTokenRequest
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
@@ -73,16 +75,23 @@ class NetworkModule {
                       }
                       .body<TokenResponseDto>()
                 }
-                .getOrNull()
-                ?.let { tokens ->
-                  tokenRepository.saveTokens(tokens.accessToken, tokens.refreshToken)
-                  BearerTokens(tokens.accessToken, tokens.refreshToken)
-                }
-                ?: run {
-                  tokenRepository.clearTokens()
-                  authEventBus.emitSessionExpired()
-                  null
-                }
+                .fold(
+                    onSuccess = { tokens ->
+                      tokenRepository.saveTokens(tokens.accessToken, tokens.refreshToken)
+                      BearerTokens(tokens.accessToken, tokens.refreshToken)
+                    },
+                    onFailure = { error ->
+                      // Only treat authentication failures (401/403) as a session expiry.
+                      // Transient errors (network, 5xx) propagate without clearing tokens
+                      // so the caller can retry or surface the error appropriately.
+                      if (error is ClientRequestException &&
+                          error.response.status.value in 401..403) {
+                        tokenRepository.clearTokens()
+                        authEventBus.emitSessionExpired()
+                      }
+                      null
+                    },
+                )
           }
           // Auth endpoints are self-authenticating (credentials in body) — no bearer header.
           sendWithoutRequest { request -> !request.url.toString().contains("auth/") }

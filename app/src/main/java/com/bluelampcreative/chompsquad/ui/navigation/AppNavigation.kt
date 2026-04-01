@@ -37,7 +37,7 @@ fun ChompSquadApp() {
 
   val startDestination: AppRoute? by
       produceState(initialValue = null) {
-        value = if (tokenRepository.getAccessToken() != null) AppRoute.Main else AppRoute.Onboarding
+        value = if (tokenRepository.hasValidSession()) AppRoute.Main else AppRoute.Onboarding
       }
 
   // Wait for the DataStore check before composing navigation.

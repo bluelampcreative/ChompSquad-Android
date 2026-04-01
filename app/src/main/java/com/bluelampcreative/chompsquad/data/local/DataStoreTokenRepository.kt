@@ -3,7 +3,9 @@ package com.bluelampcreative.chompsquad.data.local
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import org.koin.core.annotation.Singleton
@@ -19,10 +21,16 @@ class DataStoreTokenRepository(private val dataStore: DataStore<Preferences>) : 
   }
 
   override suspend fun getAccessToken(): String? =
-      dataStore.data.map { it[Keys.ACCESS_TOKEN] }.firstOrNull()
+      dataStore.data.catch { emit(emptyPreferences()) }.map { it[Keys.ACCESS_TOKEN] }.firstOrNull()
 
   override suspend fun getRefreshToken(): String? =
-      dataStore.data.map { it[Keys.REFRESH_TOKEN] }.firstOrNull()
+      dataStore.data
+          .catch { emit(emptyPreferences()) }
+          .map { it[Keys.REFRESH_TOKEN] }
+          .firstOrNull()
+
+  override suspend fun hasValidSession(): Boolean =
+      getAccessToken() != null && getRefreshToken() != null
 
   override suspend fun clearTokens() {
     dataStore.edit { prefs ->
