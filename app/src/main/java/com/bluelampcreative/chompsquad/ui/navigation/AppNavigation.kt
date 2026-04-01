@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavBackStack
@@ -12,20 +15,42 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import com.bluelampcreative.chompsquad.data.local.TokenRepository
+import com.bluelampcreative.chompsquad.data.remote.AuthEventBus
 import com.bluelampcreative.chompsquad.feature.onboarding.OnboardingScreen
 import com.bluelampcreative.chompsquad.feature.signin.SignInScreen
 import com.bluelampcreative.chompsquad.feature.signup.SignUpScreen
+import org.koin.compose.koinInject
 
 /**
- * Root composable for the app. Sets up a Navigation 3 [NavDisplay] starting at
- * [AppRoute.Onboarding].
+ * Root composable for the app. Checks for a persisted token before building the backstack so
+ * returning users land directly on [AppRoute.Main] rather than re-running the auth flow.
  *
- * The Main shell is a stub for task 3.8.
+ * Renders nothing until the DataStore read resolves (typically < 1 frame). The Main shell is a stub
+ * for task 3.8.
  */
 @Suppress("ModifierMissing") // Root navigation composable — no modifier parameter needed
 @Composable
 fun ChompSquadApp() {
-  val backStack = rememberNavBackStack(AppRoute.Onboarding)
+  val tokenRepository = koinInject<TokenRepository>()
+  val authEventBus = koinInject<AuthEventBus>()
+
+  val startDestination: AppRoute? by
+      produceState(initialValue = null) {
+        value = if (tokenRepository.getAccessToken() != null) AppRoute.Main else AppRoute.Onboarding
+      }
+
+  // Wait for the DataStore check before composing navigation.
+  val destination = startDestination ?: return
+
+  val backStack = rememberNavBackStack(destination)
+
+  LaunchedEffect(Unit) {
+    authEventBus.sessionExpired.collect {
+      backStack.clear()
+      backStack += AppRoute.SignIn
+    }
+  }
 
   NavDisplay(
       backStack = backStack,
