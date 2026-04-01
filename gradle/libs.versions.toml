@@ -28,6 +28,7 @@ room = "2.7.0"
 datastore = "1.1.2"
 camerax = "1.5.1"
 credentials = "1.5.0"
+splashscreen = "1.0.1"
 
 # ── Kotlin ecosystem ─────────────────────────────────────────────────────────
 kotlinxSerialization = "1.8.0"
@@ -79,6 +80,8 @@ androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-compose-material3-adaptive-nav-suite = { group = "androidx.compose.material3", name = "material3-adaptive-navigation-suite" }
+androidx-compose-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core" }
+androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 
 # ── Navigation 3 ─────────────────────────────────────────────────────────────
 androidx-navigation3-runtime = { group = "androidx.navigation3", name = "navigation3-runtime", version.ref = "navigation3" }
@@ -131,6 +134,9 @@ firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging
 # ── RevenueCat ───────────────────────────────────────────────────────────────
 revenuecat = { group = "com.revenuecat.purchases", name = "purchases", version.ref = "revenuecat" }
 revenuecat-ui = { group = "com.revenuecat.purchases", name = "purchases-ui", version.ref = "revenuecat" }
+
+# ── Splash Screen ────────────────────────────────────────────────────────────
+androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashscreen" }
 
 # ── Credential Manager + Google Sign-In ──────────────────────────────────────
 androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }

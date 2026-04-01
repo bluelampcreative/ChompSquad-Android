@@ -41,6 +41,13 @@ app/src/main/java/com/bluelampcreative/chompsquad/
 Extend `CoreViewModel<StateType, ActionType, UIEventType>`. The `StateReducer` handles
 state via a `Channel`-backed running fold — dispatch actions, never mutate state directly.
 
+- **State**: dispatch `ActionType` via `state.dispatch(action)` — never mutate directly.
+- **Navigation events** (VM → UI one-shots): call `navigate(event: UIEventType)`. Collect
+  `viewModel.navEvents` in the composable via `LaunchedEffect(Unit)`. Use
+  `rememberUpdatedState` when the navigation lambda is captured inside the effect.
+- **UI events** (UI → VM): implement `handleEvent(event: UIEventType)` from `UIEventHandler`
+  for button-press style interactions when needed.
+
 ## Gradle conventions
 
 - `ksp {}` block goes at **top level** in `app/build.gradle.kts`, not inside `android {}`.
@@ -71,9 +78,24 @@ Or to auto-format first:
 | Concern | Decision | Reason |
 |---|---|---|
 | Token storage | Preferences DataStore (two string keys) | Proto DataStore overhead not justified for two strings |
-| DI | Koin 4 with compiler plugin | Replaces KSP-based annotation processing |
+| DI | Koin 4 — annotation-based modules (`@Module`, `@ComponentScan`, `@Singleton`, `@KoinViewModel`) processed by the Koin Kotlin Compiler Plugin v0.4.1 | KSP approach (`koin-ksp-compiler`) is deprecated for Koin 4.x; `startKoin<KoinConfig>` from `org.koin.plugin.module.dsl` |
 | Serialization | kotlinx.serialization | Used for both API DTOs and Navigation 3 route serialization |
 | Room schema | `exportSchema = true`, exports to `app/schemas/` | Schema tracked in version control |
+
+## Koin module rules
+
+- Each `@Module` class lives in `di/` and uses `@ComponentScan` to point at the package it owns:
+  - `DataModule` → `data.local`
+  - `NetworkModule` → `data.remote`
+  - `ViewModelModule` → `feature`
+- **Cross-module dependencies**: the compiler plugin does strict graph validation per module. If
+  Module A's scanned classes depend on types provided by Module B, declare it explicitly:
+  `@Module(includes = [ModuleB::class])`. Without this the plugin emits "Missing dependency" errors.
+- **Interface bindings**: annotate the concrete class with `@Singleton(binds = [MyInterface::class])`
+  so the graph resolves the interface, not just the concrete type.
+- **Startup**: `@KoinApplication(modules = [...])` on a private `object KoinConfig` in
+  `ChompSquadApplication.kt`; call `startKoin<KoinConfig> { ... }` from `Application.onCreate`.
+  Import is `org.koin.plugin.module.dsl.startKoin` (NOT `org.koin.core.context.startKoin`).
 
 ## Room
 

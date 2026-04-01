@@ -8,8 +8,6 @@ plugins {
   alias(libs.plugins.google.services)
   alias(libs.plugins.firebase.crashlytics)
   alias(libs.plugins.koin.compiler)
-  // protobuf plugin removed — Preferences DataStore used for token storage (no .proto schema
-  // needed)
   alias(libs.plugins.detekt)
 }
 
@@ -34,6 +32,18 @@ val hasSigningConfig =
       keystoreProperties.containsKey(it)
     }
 
+// ── BuildConfig values ────────────────────────────────────────────────────────
+// Computed once here; applied per build type below with appropriate severity
+// (warn for debug, error for release). API_BASE_URL is normalised to always
+// carry a trailing slash so Ktor URL resolution works correctly.
+
+val localApiBaseUrl: String = run {
+  val raw = localProperties["api.base.url"] as String? ?: ""
+  if (raw.isBlank()) "" else raw.trimEnd('/') + "/"
+}
+val localGoogleClientId: String = localProperties["google.web.client.id"] as String? ?: ""
+val localRevenueCatKey: String = localProperties["revenuecat.api.key.android"] as String? ?: ""
+
 android {
   namespace = "com.bluelampcreative.chompsquad"
   compileSdk {
@@ -49,26 +59,7 @@ android {
     targetSdk = libs.versions.targetSdk.get().toInt()
     versionCode = libs.versions.appVersionCode.get().toInt()
     versionName = libs.versions.appVersionName.get()
-
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-    val revenueCatKey = localProperties["revenuecat.api.key.android"] as String? ?: ""
-    if (revenueCatKey.isBlank()) {
-      val isReleaseBuild =
-          gradle.startParameter.taskNames.any { it.contains("release", ignoreCase = true) }
-      if (isReleaseBuild) {
-        error(
-            "Missing revenuecat.api.key.android in local.properties. " +
-                "Release builds require a valid RevenueCat API key."
-        )
-      } else {
-        logger.warn(
-            "⚠️  revenuecat.api.key.android not set in local.properties — " +
-                "RevenueCat will not initialize in this debug build."
-        )
-      }
-    }
-    buildConfigField("String", "REVENUECAT_API_KEY", "\"$revenueCatKey\"")
   }
 
   signingConfigs {
@@ -86,7 +77,27 @@ android {
     debug {
       applicationIdSuffix = ".debug"
       versionNameSuffix = "-debug"
-      // Uses default debug signing config automatically.
+
+      // Optional in debug — warn so the developer knows what will be broken.
+      if (localApiBaseUrl.isBlank())
+          logger.warn(
+              "⚠️  api.base.url not set in local.properties — " +
+                  "network calls will fail in this debug build."
+          )
+      if (localGoogleClientId.isBlank())
+          logger.warn(
+              "⚠️  google.web.client.id not set in local.properties — " +
+                  "Google Sign-In will fail in this debug build."
+          )
+      if (localRevenueCatKey.isBlank())
+          logger.warn(
+              "⚠️  revenuecat.api.key.android not set in local.properties — " +
+                  "RevenueCat will not initialize in this debug build."
+          )
+
+      buildConfigField("String", "API_BASE_URL", "\"$localApiBaseUrl\"")
+      buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$localGoogleClientId\"")
+      buildConfigField("String", "REVENUECAT_API_KEY", "\"$localRevenueCatKey\"")
     }
     release {
       isMinifyEnabled = false
@@ -100,6 +111,33 @@ android {
         )
       }
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+
+      // Required for release — fail fast at configuration time rather than at runtime.
+      // The isReleaseBuild guard prevents spurious errors when Gradle configures the
+      // release variant during a debug build invocation.
+      val isReleaseBuild =
+          gradle.startParameter.taskNames.any { it.contains("release", ignoreCase = true) }
+      if (isReleaseBuild) {
+        if (localApiBaseUrl.isBlank())
+            error(
+                "Missing api.base.url in local.properties. " +
+                    "Release builds require a valid API base URL."
+            )
+        if (localGoogleClientId.isBlank())
+            error(
+                "Missing google.web.client.id in local.properties. " +
+                    "Release builds require a valid Google Web Client ID."
+            )
+        if (localRevenueCatKey.isBlank())
+            error(
+                "Missing revenuecat.api.key.android in local.properties. " +
+                    "Release builds require a valid RevenueCat API key."
+            )
+      }
+
+      buildConfigField("String", "API_BASE_URL", "\"$localApiBaseUrl\"")
+      buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$localGoogleClientId\"")
+      buildConfigField("String", "REVENUECAT_API_KEY", "\"$localRevenueCatKey\"")
     }
   }
 
@@ -133,6 +171,7 @@ ksp {
 dependencies {
   // ── AndroidX Core ────────────────────────────────────────────────────────
   implementation(libs.androidx.core.ktx)
+  implementation(libs.androidx.core.splashscreen)
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.lifecycle.runtime.ktx)
   implementation(libs.androidx.lifecycle.viewmodel.compose)
@@ -144,6 +183,8 @@ dependencies {
   implementation(libs.androidx.compose.ui.tooling.preview)
   implementation(libs.androidx.compose.material3)
   implementation(libs.androidx.compose.material3.adaptive.nav.suite)
+  implementation(libs.androidx.compose.material.icons.core)
+  implementation(libs.androidx.compose.material.icons.extended)
 
   // ── Navigation 3 ─────────────────────────────────────────────────────────
   implementation(libs.bundles.navigation3)

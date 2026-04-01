@@ -1,0 +1,19 @@
+# Copy this file to local.properties and fill in your values.
+# local.properties is gitignored — never commit real keys.
+
+# Android SDK location (set automatically by Android Studio)
+sdk.dir=/Users/<your-username>/Library/Android/sdk
+
+# ChompSquad API base URL (include trailing slash)
+# Development:  https://api.dev.chompsquad.app/
+# Production:   https://api.chompsquad.app/
+api.base.url=https://api.dev.chompsquad.app/
+
+# Google OAuth 2.0 Web Client ID
+# Found in Google Cloud Console → APIs & Services → Credentials
+# Use the *Web application* client ID (not the Android client ID)
+google.web.client.id=YOUR_WEB_CLIENT_ID.apps.googleusercontent.com
+
+# RevenueCat Android API key
+# Found in RevenueCat dashboard → Project → API Keys → Android public SDK key
+revenuecat.api.key.android=goog_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

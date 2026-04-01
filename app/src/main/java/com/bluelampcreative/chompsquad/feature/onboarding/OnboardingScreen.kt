@@ -19,8 +19,14 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -32,9 +38,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -42,13 +50,11 @@ import com.bluelampcreative.chompsquad.ui.theme.ChompSquadTheme
 import com.bluelampcreative.chompsquad.ui.theme.brandGolden
 import com.bluelampcreative.chompsquad.ui.theme.brandGoldenDark
 import com.bluelampcreative.chompsquad.ui.theme.brandGreen
-import com.bluelampcreative.chompsquad.ui.theme.brandGreenContainer
-import com.bluelampcreative.chompsquad.ui.theme.brandGreenMid
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
 private data class OnboardingPageData(
-    val illustrationLabel: String,
+    val icon: ImageVector,
     val illustrationColor: Color,
     val headline: String,
     val body: String,
@@ -57,22 +63,22 @@ private data class OnboardingPageData(
 private val pages =
     listOf(
         OnboardingPageData(
-            illustrationLabel = "Squad illustration\n(task 0.1 asset)",
+            icon = Icons.Default.CameraAlt,
             illustrationColor = brandGreen,
             headline = "Scan any recipe\nin seconds",
             body =
                 "Point your camera at any recipe — cookbook, card, or screen — and let ChompSquad do the rest.",
         ),
         OnboardingPageData(
-            illustrationLabel = "Recipe card illustration\n(task 0.1 asset)",
-            illustrationColor = brandGreenMid,
+            icon = Icons.AutoMirrored.Default.MenuBook,
+            illustrationColor = brandGreen,
             headline = "Build your perfect\ncookbook",
             body =
                 "Every recipe you scan is saved, organized, and searchable in your personal collection.",
         ),
         OnboardingPageData(
-            illustrationLabel = "Chef mascot illustration\n(task 0.1 asset)",
-            illustrationColor = brandGreenContainer,
+            icon = Icons.Default.Restaurant,
+            illustrationColor = brandGreen,
             headline = "Cook with\nconfidence",
             body = "Your entire recipe collection — always at your fingertips, online or off.",
         ),
@@ -96,13 +102,19 @@ fun OnboardingScreen(
               .statusBarsPadding()
               .navigationBarsPadding(),
   ) {
-    // Skip button — visible on pages 0 and 1 only
+    // Skip button — invisible on the last page but always occupies space so
+    // the pager and CTAs below don't shift when it disappears.
+    val isLastPage = pagerState.currentPage >= pages.lastIndex
     Box(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
         contentAlignment = Alignment.CenterEnd,
     ) {
-      if (pagerState.currentPage < pages.lastIndex) {
-        TextButton(onClick = onNavigateToSignIn) { Text("Skip") }
+      TextButton(
+          onClick = onNavigateToSignIn,
+          enabled = !isLastPage,
+          modifier = Modifier.alpha(if (isLastPage) 0f else 1f),
+      ) {
+        Text("Skip")
       }
     }
 
@@ -161,8 +173,7 @@ private fun OnboardingPageContent(
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.Center,
   ) {
-    // Illustration placeholder — replace with actual asset in task 3.9 once brand
-    // artwork safe-zone review (task 0.1) is complete.
+    // Icon placeholder — replace with brand illustration in task 3.9.
     Box(
         modifier =
             Modifier.size(260.dp)
@@ -171,11 +182,11 @@ private fun OnboardingPageContent(
                 .background(page.illustrationColor),
         contentAlignment = Alignment.Center,
     ) {
-      Text(
-          text = page.illustrationLabel,
-          style = MaterialTheme.typography.labelMedium,
-          color = Color.White,
-          textAlign = TextAlign.Center,
+      Icon(
+          imageVector = page.icon,
+          contentDescription = null,
+          tint = Color.White,
+          modifier = Modifier.size(120.dp),
       )
     }
 
