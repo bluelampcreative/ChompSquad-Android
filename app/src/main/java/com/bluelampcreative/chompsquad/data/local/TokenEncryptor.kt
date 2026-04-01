@@ -12,6 +12,7 @@ import org.koin.core.annotation.Singleton
 
 private const val KEYSTORE_ALIAS = "chompsquad_token_key"
 private const val AES_GCM_NOPADDING = "AES/GCM/NoPadding"
+private const val AES_KEY_SIZE_BITS = 256
 private const val GCM_IV_LENGTH = 12
 private const val GCM_TAG_LENGTH_BITS = 128
 
@@ -20,8 +21,8 @@ interface TokenEncryptor {
   fun encrypt(value: String): String
 
   /**
-   * Returns the decrypted token, or null if decryption fails (e.g. key rotated, data corrupted,
-   * or legacy plaintext value stored before encryption was introduced).
+   * Returns the decrypted token, or null if decryption fails (e.g. key rotated, data corrupted, or
+   * legacy plaintext value stored before encryption was introduced).
    */
   fun decrypt(value: String): String?
 }
@@ -43,7 +44,7 @@ class KeystoreTokenEncryptor : TokenEncryptor {
                   )
                   .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                   .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                  .setKeySize(256)
+                  .setKeySize(AES_KEY_SIZE_BITS)
                   .build()
           )
         }
@@ -64,8 +65,7 @@ class KeystoreTokenEncryptor : TokenEncryptor {
             val iv = combined.copyOfRange(0, GCM_IV_LENGTH)
             val ciphertext = combined.copyOfRange(GCM_IV_LENGTH, combined.size)
             val cipher = Cipher.getInstance(AES_GCM_NOPADDING)
-            cipher.init(
-                Cipher.DECRYPT_MODE, secretKey(), GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv))
+            cipher.init(Cipher.DECRYPT_MODE, secretKey(), GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv))
             String(cipher.doFinal(ciphertext), Charsets.UTF_8)
           }
           .getOrNull()

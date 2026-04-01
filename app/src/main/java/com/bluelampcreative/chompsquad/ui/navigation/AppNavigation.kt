@@ -18,6 +18,7 @@ import androidx.navigation3.ui.NavDisplay
 import com.bluelampcreative.chompsquad.data.local.TokenRepository
 import com.bluelampcreative.chompsquad.data.remote.AuthEventBus
 import com.bluelampcreative.chompsquad.feature.onboarding.OnboardingScreen
+import com.bluelampcreative.chompsquad.feature.profile.ProfileScreen
 import com.bluelampcreative.chompsquad.feature.signin.SignInScreen
 import com.bluelampcreative.chompsquad.feature.signup.SignUpScreen
 import org.koin.compose.koinInject
@@ -67,7 +68,15 @@ fun ChompSquadApp() {
             entry<AppRoute.SignUp> { SignUpScreen(onNavEvent = { backStack.handleNavEvent(it) }) }
             entry<AppRoute.Main> {
               // TODO(task 3.8): implement bottom-nav shell
-              AuthPlaceholderScreen(label = "Main App")
+              ProfileScreen(onNavEvent = { backStack.handleNavEvent(it) })
+            }
+            entry<AppRoute.Profile> { ProfileScreen(onNavEvent = { backStack.handleNavEvent(it) }) }
+            entry<AppRoute.Settings> {
+              // TODO(task 1.8): implement Settings screen
+              AuthPlaceholderScreen(label = "Settings")
+            }
+            entry<AppRoute.DeveloperSettings> {
+              AuthPlaceholderScreen(label = "Developer Settings")
             }
           },
   )
@@ -104,5 +113,7 @@ private fun NavBackStack<NavKey>.handleNavEvent(event: NavEvent) {
       removeLastOrNull()
       this += AppRoute.SignUp
     }
+    NavEvent.NavigateToSettings -> this += AppRoute.Settings
+    NavEvent.NavigateToDeveloperSettings -> this += AppRoute.DeveloperSettings
   }
 }

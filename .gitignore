@@ -53,3 +53,4 @@ test-results/
 lint-results/
 lint-results*.html
 lint-results*.xml
+keystore.properties

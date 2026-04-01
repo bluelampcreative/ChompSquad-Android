@@ -10,4 +10,10 @@ sealed interface NavEvent {
 
   /** Replace the current auth screen with Sign Up (pop current, push Sign Up). */
   data object NavigateToSignUp : NavEvent
+
+  /** Push the Settings screen (task 1.8). */
+  data object NavigateToSettings : NavEvent
+
+  /** Push the Developer Settings screen (debug builds only). */
+  data object NavigateToDeveloperSettings : NavEvent
 }
