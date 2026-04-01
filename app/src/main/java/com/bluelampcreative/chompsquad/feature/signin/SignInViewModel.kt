@@ -41,16 +41,16 @@ class SignInViewModel(
     viewModelScope.launch {
       state.dispatch(SignInAction.StartLoading)
       authApi
-        .signInWithGoogle(idToken)
-        .onSuccess { response ->
-          tokenRepository.saveTokens(response.accessToken, response.refreshToken)
-          navigate(NavEvent.NavigateToMain)
-        }
-        .onFailure { error ->
-          state.dispatch(
-              SignInAction.ShowError(error.message ?: "Sign in failed. Please try again.")
-          )
-        }
+          .signInWithGoogle(idToken)
+          .onSuccess { response ->
+            tokenRepository.saveTokens(response.accessToken, response.refreshToken)
+            navigate(NavEvent.NavigateToMain)
+          }
+          .onFailure { error ->
+            state.dispatch(
+                SignInAction.ShowError(error.message ?: "Sign in failed. Please try again.")
+            )
+          }
     }
   }
 }
