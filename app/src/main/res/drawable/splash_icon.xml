@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Splash screen icon wrapper.
+
+    Android 12+ always masks the windowSplashScreenAnimatedIcon to a 240 dp
+    circle inside a 288 dp canvas. The 12.5 % inset on every side scales the
+    image to ~252 dp, keeping all content within the 240 dp safe zone.
+    Adjust android:inset if the logo needs to be larger or smaller.
+-->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/chompsquad_transparent"
+    android:inset="12.5%" />
