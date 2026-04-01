@@ -1,6 +1,8 @@
 package com.bluelampcreative.chompsquad.feature.signin
 
 import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -79,8 +81,29 @@ fun SignInScreen(
     modifier: Modifier = Modifier,
     viewModel: SignInViewModel = koinViewModel(),
 ) {
+
+  val currentOnNavEvent by rememberUpdatedState(onNavEvent)
+  LaunchedEffect(Unit) { viewModel.navEvents.collect { event -> currentOnNavEvent(event) } }
+
   val viewState by viewModel.viewState.collectAsStateWithLifecycle()
+
+  SignInScreen(
+      onNavEvent = onNavEvent,
+      onHandleEvent = viewModel::handleEvent,
+      viewState = viewState,
+      modifier = modifier,
+  )
+}
+
+@Composable
+fun SignInScreen(
+    onNavEvent: (NavEvent) -> Unit,
+    onHandleEvent: (SignInUiEvent) -> Unit,
+    viewState: SignInViewState,
+    modifier: Modifier = Modifier,
+) {
   val context = LocalContext.current
+  val activity = remember(context) { context.findActivity() }
   val scope = rememberCoroutineScope()
   val focusManager = LocalFocusManager.current
 
@@ -90,15 +113,12 @@ fun SignInScreen(
 
   val passwordFocusRequester = remember { FocusRequester() }
 
-  val currentOnNavEvent by rememberUpdatedState(onNavEvent)
-  LaunchedEffect(Unit) { viewModel.navEvents.collect { event -> currentOnNavEvent(event) } }
-
   val submitEnabled = email.isNotBlank() && password.isNotBlank() && !viewState.isLoading
 
   fun submitEmailSignIn() {
     if (submitEnabled) {
       focusManager.clearFocus()
-      viewModel.handleEvent(SignInUiEvent.OnEmailSignInSubmitted(email.trim(), password))
+      onHandleEvent(SignInUiEvent.OnEmailSignInSubmitted(email.trim(), password))
     }
   }
 
@@ -194,19 +214,19 @@ fun SignInScreen(
 
       GoogleSignInButton(
           onClick = {
+            val act = activity ?: return@GoogleSignInButton
             scope.launch {
               launchGoogleSignIn(
-                  context = context as Activity,
+                  activity = act,
                   onTokenReceived = { idToken ->
-                    viewModel.handleEvent(SignInUiEvent.OnGoogleTokenReceived(idToken))
+                    onHandleEvent(SignInUiEvent.OnGoogleTokenReceived(idToken))
                   },
-                  onError = { message ->
-                    viewModel.handleEvent(SignInUiEvent.OnSignInError(message))
-                  },
+                  onError = { message -> onHandleEvent(SignInUiEvent.OnSignInError(message)) },
               )
             }
           },
-          enabled = !viewState.isLoading,
+          enabled = !viewState.isLoading && activity != null,
+          label = "Sign in with Google",
           modifier = Modifier.fillMaxWidth(),
       )
 
@@ -223,13 +243,11 @@ fun SignInScreen(
 
   viewState.errorMessage?.let { message ->
     AlertDialog(
-        onDismissRequest = { viewModel.handleEvent(SignInUiEvent.OnDismissError) },
+        onDismissRequest = { onHandleEvent(SignInUiEvent.OnDismissError) },
         title = { Text("Sign in failed") },
         text = { Text(message) },
         confirmButton = {
-          TextButton(onClick = { viewModel.handleEvent(SignInUiEvent.OnDismissError) }) {
-            Text("OK")
-          }
+          TextButton(onClick = { onHandleEvent(SignInUiEvent.OnDismissError) }) { Text("OK") }
         },
     )
   }
@@ -259,6 +277,7 @@ internal fun GoogleSignInButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    label: String = "Continue with Google",
 ) {
   OutlinedButton(onClick = onClick, modifier = modifier, enabled = enabled) {
     Row(
@@ -271,24 +290,37 @@ internal fun GoogleSignInButton(
           modifier = Modifier.size(18.dp),
       )
       Spacer(modifier = Modifier.width(8.dp))
-      Text("Sign in with Google")
+      Text(label)
     }
   }
 }
 
 /**
+ * Resolves the nearest [Activity] from a [Context] by unwrapping [ContextWrapper] chains. Returns
+ * null if no [Activity] is found (e.g. in Compose Previews or Fragment hosts).
+ */
+internal fun Context.findActivity(): Activity? {
+  var ctx = this
+  while (ctx is ContextWrapper) {
+    if (ctx is Activity) return ctx
+    ctx = ctx.baseContext
+  }
+  return null
+}
+
+/**
  * Launches the Credential Manager bottom sheet to obtain a Google ID token.
  *
- * Must be called from a composable coroutine scope with an [Activity] context. On success the ID
- * token is delivered via [onTokenReceived]; on cancellation nothing happens; on any other failure
- * [onError] is called with a human-readable message.
+ * Must be called from a coroutine with a resolved [Activity]. On success the ID token is delivered
+ * via [onTokenReceived]; on cancellation nothing happens; on any other failure [onError] is called
+ * with a human-readable message.
  */
 internal suspend fun launchGoogleSignIn(
-    context: Activity,
+    activity: Activity,
     onTokenReceived: (idToken: String) -> Unit,
     onError: (message: String) -> Unit,
 ) {
-  val credentialManager = CredentialManager.create(context)
+  val credentialManager = CredentialManager.create(activity)
 
   val googleIdOption =
       GetGoogleIdOption.Builder()
@@ -300,7 +332,7 @@ internal suspend fun launchGoogleSignIn(
 
   val request = GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
 
-  runCatching { credentialManager.getCredential(context, request) }
+  runCatching { credentialManager.getCredential(activity, request) }
       .onSuccess { result ->
         val credential = result.credential
         if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
@@ -321,5 +353,12 @@ internal suspend fun launchGoogleSignIn(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun SignInScreenPreview() {
-  ChompSquadTheme { SignInScreen(onNavEvent = {}) }
+  ChompSquadTheme {
+    SignInScreen(
+        onNavEvent = {},
+        onHandleEvent = {},
+        viewState = SignInViewState(),
+        modifier = Modifier.fillMaxSize(),
+    )
+  }
 }

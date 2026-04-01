@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.bluelampcreative.chompsquad.core.CoreViewModel
 import com.bluelampcreative.chompsquad.data.local.TokenRepository
 import com.bluelampcreative.chompsquad.data.remote.AuthApi
+import com.bluelampcreative.chompsquad.data.remote.toAuthErrorMessage
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
@@ -41,7 +42,9 @@ class SignInViewModel(
           }
           .onFailure { error ->
             state.dispatch(
-                SignInAction.ShowError(error.message ?: "Sign in failed. Please try again.")
+                SignInAction.ShowError(
+                    error.toAuthErrorMessage("Sign in failed. Please try again.")
+                )
             )
           }
     }
@@ -66,7 +69,9 @@ class SignInViewModel(
           }
           .onFailure { error ->
             state.dispatch(
-                SignInAction.ShowError(error.message ?: "Sign in failed. Please try again.")
+                SignInAction.ShowError(
+                    error.toAuthErrorMessage("Sign in failed. Please try again.")
+                )
             )
           }
     }

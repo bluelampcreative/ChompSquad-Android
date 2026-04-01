@@ -1,6 +1,5 @@
 package com.bluelampcreative.chompsquad.feature.signup
 
-import android.app.Activity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -52,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bluelampcreative.chompsquad.feature.signin.GoogleSignInButton
 import com.bluelampcreative.chompsquad.feature.signin.OrDivider
+import com.bluelampcreative.chompsquad.feature.signin.findActivity
 import com.bluelampcreative.chompsquad.feature.signin.launchGoogleSignIn
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
 import com.bluelampcreative.chompsquad.ui.theme.ChompSquadTheme
@@ -64,8 +64,30 @@ fun SignUpScreen(
     modifier: Modifier = Modifier,
     viewModel: SignUpViewModel = koinViewModel(),
 ) {
+
+  val currentOnNavEvent by rememberUpdatedState(onNavEvent)
+  LaunchedEffect(Unit) { viewModel.navEvents.collect { event -> currentOnNavEvent(event) } }
+
   val viewState by viewModel.viewState.collectAsStateWithLifecycle()
+
+  SignUpScreen(
+      onNavEvent = onNavEvent,
+      onHandleEvent = viewModel::handleEvent,
+      viewState = viewState,
+      modifier = modifier,
+  )
+}
+
+@Composable
+fun SignUpScreen(
+    onNavEvent: (NavEvent) -> Unit,
+    onHandleEvent: (SignUpUiEvent) -> Unit,
+    viewState: SignUpViewState,
+    modifier: Modifier = Modifier,
+) {
+
   val context = LocalContext.current
+  val activity = remember(context) { context.findActivity() }
   val scope = rememberCoroutineScope()
   val focusManager = LocalFocusManager.current
 
@@ -76,9 +98,6 @@ fun SignUpScreen(
 
   val passwordFocusRequester = remember { FocusRequester() }
   val confirmPasswordFocusRequester = remember { FocusRequester() }
-
-  val currentOnNavEvent by rememberUpdatedState(onNavEvent)
-  LaunchedEffect(Unit) { viewModel.navEvents.collect { event -> currentOnNavEvent(event) } }
 
   val submitEnabled =
       email.isNotBlank() &&
@@ -94,7 +113,7 @@ fun SignUpScreen(
     }
     confirmPasswordError = null
     focusManager.clearFocus()
-    viewModel.handleEvent(SignUpUiEvent.OnSubmit(email.trim(), password))
+    onHandleEvent(SignUpUiEvent.OnSubmit(email.trim(), password))
   }
 
   Box(modifier = modifier.fillMaxSize()) {
@@ -192,19 +211,21 @@ fun SignUpScreen(
 
       GoogleSignInButton(
           onClick = {
+            val act = activity ?: return@GoogleSignInButton
             scope.launch {
               launchGoogleSignIn(
-                  context = context as Activity,
+                  activity = act,
                   onTokenReceived = { idToken ->
-                    viewModel.handleEvent(SignUpUiEvent.OnGoogleTokenReceived(idToken))
+                    onHandleEvent(SignUpUiEvent.OnGoogleTokenReceived(idToken))
                   },
                   onError = { message ->
-                    viewModel.handleEvent(SignUpUiEvent.OnGoogleSignInError(message))
+                    onHandleEvent(SignUpUiEvent.OnGoogleSignInError(message))
                   },
               )
             }
           },
-          enabled = !viewState.isLoading,
+          enabled = !viewState.isLoading && activity != null,
+          label = "Sign up with Google",
           modifier = Modifier.fillMaxWidth(),
       )
 
@@ -221,13 +242,11 @@ fun SignUpScreen(
 
   viewState.errorMessage?.let { message ->
     AlertDialog(
-        onDismissRequest = { viewModel.handleEvent(SignUpUiEvent.OnDismissError) },
+        onDismissRequest = { onHandleEvent(SignUpUiEvent.OnDismissError) },
         title = { Text("Account creation failed") },
         text = { Text(message) },
         confirmButton = {
-          TextButton(onClick = { viewModel.handleEvent(SignUpUiEvent.OnDismissError) }) {
-            Text("OK")
-          }
+          TextButton(onClick = { onHandleEvent(SignUpUiEvent.OnDismissError) }) { Text("OK") }
         },
     )
   }
@@ -276,5 +295,12 @@ private fun PasswordTextField(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun SignUpScreenPreview() {
-  ChompSquadTheme { SignUpScreen(onNavEvent = {}) }
+  ChompSquadTheme {
+    SignUpScreen(
+        onNavEvent = {},
+        onHandleEvent = {},
+        viewState = SignUpViewState(),
+        modifier = Modifier.fillMaxSize(),
+    )
+  }
 }

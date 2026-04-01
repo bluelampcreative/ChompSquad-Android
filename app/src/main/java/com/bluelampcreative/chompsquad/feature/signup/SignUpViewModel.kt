@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.bluelampcreative.chompsquad.core.CoreViewModel
 import com.bluelampcreative.chompsquad.data.local.TokenRepository
 import com.bluelampcreative.chompsquad.data.remote.AuthApi
+import com.bluelampcreative.chompsquad.data.remote.toAuthErrorMessage
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
@@ -42,7 +43,7 @@ class SignUpViewModel(
           .onFailure { error ->
             state.dispatch(
                 SignUpAction.ShowError(
-                    error.message ?: "Account creation failed. Please try again."
+                    error.toAuthErrorMessage("Account creation failed. Please try again.")
                 )
             )
           }
@@ -62,7 +63,7 @@ class SignUpViewModel(
           .onFailure { error ->
             state.dispatch(
                 SignUpAction.ShowError(
-                    error.message ?: "Account creation failed. Please try again."
+                    error.toAuthErrorMessage("Account creation failed. Please try again.")
                 )
             )
           }
