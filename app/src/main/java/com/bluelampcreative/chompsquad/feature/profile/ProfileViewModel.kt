@@ -87,7 +87,10 @@ class ProfileViewModel(
       state.dispatch(ProfileAction.AvatarUploadStarted)
       userProfileApi
           .uploadAvatar(imageBytes, mimeType)
-          .onSuccess { loadProfile() }
+          .onSuccess {
+            state.dispatch(ProfileAction.AvatarUploadFinished)
+            loadProfile()
+          }
           .onFailure {
             state.dispatch(ProfileAction.AvatarUploadFinished)
             state.dispatch(ProfileAction.ShowError("Avatar upload failed. Please try again."))

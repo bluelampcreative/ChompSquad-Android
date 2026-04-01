@@ -31,7 +31,10 @@ class UserProfileApi(private val client: HttpClient) {
                     imageBytes,
                     Headers.build {
                       append(HttpHeaders.ContentType, mimeType)
-                      append(HttpHeaders.ContentDisposition, "filename=\"avatar\"")
+                      append(
+                          HttpHeaders.ContentDisposition,
+                          "form-data; name=\"avatar\"; filename=\"avatar\"",
+                      )
                     },
                 )
               }

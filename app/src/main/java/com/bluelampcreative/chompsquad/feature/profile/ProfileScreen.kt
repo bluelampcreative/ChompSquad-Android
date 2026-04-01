@@ -31,14 +31,14 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SuggestionChip
-import androidx.compose.material3.SuggestionChipDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,11 +47,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
 import com.bluelampcreative.chompsquad.ui.theme.ChompSpacing
+import com.bluelampcreative.chompsquad.ui.theme.ChompSquadTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -78,14 +83,18 @@ fun ProfileScreen(
     modifier: Modifier = Modifier,
 ) {
   val context = LocalContext.current
+  val scope = rememberCoroutineScope()
   val photoPicker =
       rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         uri ?: return@rememberLauncherForActivityResult
-        val bytes =
-            context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                ?: return@rememberLauncherForActivityResult
-        val mimeType = context.contentResolver.getType(uri) ?: "image/jpeg"
-        onHandleEvent(ProfileUiEvent.AvatarSelected(bytes, mimeType))
+        scope.launch {
+          val bytes =
+              withContext(Dispatchers.IO) {
+                context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+              } ?: return@launch
+          val mimeType = context.contentResolver.getType(uri) ?: "image/jpeg"
+          onHandleEvent(ProfileUiEvent.AvatarSelected(bytes, mimeType))
+        }
       }
 
   Box(modifier = modifier.fillMaxSize()) {
@@ -163,7 +172,7 @@ private fun IdentityCard(
 ) {
   ElevatedCard(modifier = modifier.fillMaxWidth()) {
     Column(
-        modifier = Modifier.padding(ChompSpacing.md),
+        modifier = Modifier.fillMaxWidth().padding(ChompSpacing.md),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(ChompSpacing.sm),
     ) {
@@ -233,15 +242,19 @@ private fun IdentityCard(
       )
 
       if (profile.isDeveloper) {
-        SuggestionChip(
-            onClick = {},
-            label = { Text("Developer") },
-            colors =
-                SuggestionChipDefaults.suggestionChipColors(
-                    containerColor = MaterialTheme.colorScheme.inverseSurface,
-                    labelColor = MaterialTheme.colorScheme.inverseOnSurface,
-                ),
-        )
+        // Non-interactive badge — no action associated with developer tier display.
+        // Task 1.6 will gate pro features; this chip is informational only.
+        Surface(
+            shape = MaterialTheme.shapes.extraLarge,
+            color = MaterialTheme.colorScheme.inverseSurface,
+        ) {
+          Text(
+              text = "Developer",
+              style = MaterialTheme.typography.labelMedium,
+              color = MaterialTheme.colorScheme.inverseOnSurface,
+              modifier = Modifier.padding(horizontal = ChompSpacing.sm, vertical = ChompSpacing.xs),
+          )
+        }
       }
     }
   }
@@ -372,4 +385,30 @@ private fun FeedbackDialog(
       },
       dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
   )
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+private fun ProfileScreenPreview() {
+  ChompSquadTheme {
+    ProfileScreen(
+        onHandleEvent = {},
+        viewState =
+            ProfileViewState(
+                isLoading = false,
+                profile =
+                    UserProfileUiModel(
+                        id = "preview-user-id",
+                        email = "chef@chompsquad.app",
+                        displayName = "Alex Chef",
+                        avatarUrl = null,
+                        subscriptionTier = "developer",
+                        scansUsedThisMonth = 12,
+                        scansRemaining = null,
+                        isDeveloper = true,
+                    ),
+            ),
+        modifier = Modifier.fillMaxSize(),
+    )
+  }
 }
