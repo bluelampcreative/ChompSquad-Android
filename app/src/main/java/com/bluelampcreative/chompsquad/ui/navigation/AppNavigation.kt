@@ -7,6 +7,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
@@ -36,19 +38,7 @@ fun ChompSquadApp() {
                   onNavigateToSignUp = { backStack += AppRoute.SignUp },
               )
             }
-            entry<AppRoute.SignIn> {
-              SignInScreen(
-                  onNavEvent = { event ->
-                    when (event) {
-                      NavEvent.GoBack -> backStack.removeLastOrNull()
-                      NavEvent.NavigateToMain -> {
-                        backStack.clear()
-                        backStack += AppRoute.Main
-                      }
-                    }
-                  },
-              )
-            }
+            entry<AppRoute.SignIn> { SignInScreen(onNavEvent = { backStack.handleNavEvent(it) }) }
             entry<AppRoute.SignUp> {
               // TODO(task 1.3): implement Sign-Up screen
               AuthPlaceholderScreen(label = "Sign Up")
@@ -59,6 +49,22 @@ fun ChompSquadApp() {
             }
           },
   )
+}
+
+/**
+ * Centralised [NavEvent] handler. Every screen entry delegates its `onNavEvent` callback here so
+ * that all backstack manipulation lives in one place.
+ *
+ * Add new [NavEvent] cases here as features introduce them — callers need no changes.
+ */
+private fun NavBackStack<NavKey>.handleNavEvent(event: NavEvent) {
+  when (event) {
+    NavEvent.GoBack -> removeLastOrNull()
+    NavEvent.NavigateToMain -> {
+      clear()
+      this += AppRoute.Main
+    }
+  }
 }
 
 /** Temporary placeholder composable used until auth screens are implemented in tasks 1.3+. */
