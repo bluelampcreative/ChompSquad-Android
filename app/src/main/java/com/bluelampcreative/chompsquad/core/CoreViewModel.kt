@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
  * Base ViewModel for all ChompSquad screens.
  * - [viewState] — ongoing UI state driven by the [StateReducer] running fold. Dispatch pure state
  *   changes via [StateReducer.dispatch].
- * - [navEvents] — one-shot [UIEventType] values flowing VM → UI (navigation, toasts, etc.). Emit
+ * - [navEvents] — one-shot [NavEvent] values flowing VM → UI (navigation, toasts, etc.). Emit
  *   from subclasses via [navigate]; collect in the composable inside a [LaunchedEffect].
  * - [UIEventHandler.handleEvent] — UI → VM channel for button interactions and other UI-initiated
  *   side effects that don't fit the reducer.
