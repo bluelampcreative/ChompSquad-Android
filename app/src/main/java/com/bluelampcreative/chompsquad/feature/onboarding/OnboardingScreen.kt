@@ -20,6 +20,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Restaurant
@@ -37,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
@@ -48,8 +50,6 @@ import com.bluelampcreative.chompsquad.ui.theme.ChompSquadTheme
 import com.bluelampcreative.chompsquad.ui.theme.brandGolden
 import com.bluelampcreative.chompsquad.ui.theme.brandGoldenDark
 import com.bluelampcreative.chompsquad.ui.theme.brandGreen
-import com.bluelampcreative.chompsquad.ui.theme.brandGreenContainer
-import com.bluelampcreative.chompsquad.ui.theme.brandGreenMid
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -70,15 +70,15 @@ private val pages =
                 "Point your camera at any recipe — cookbook, card, or screen — and let ChompSquad do the rest.",
         ),
         OnboardingPageData(
-            icon = Icons.Default.MenuBook,
-            illustrationColor = brandGreenMid,
+            icon = Icons.AutoMirrored.Default.MenuBook,
+            illustrationColor = brandGreen,
             headline = "Build your perfect\ncookbook",
             body =
                 "Every recipe you scan is saved, organized, and searchable in your personal collection.",
         ),
         OnboardingPageData(
             icon = Icons.Default.Restaurant,
-            illustrationColor = brandGreenContainer,
+            illustrationColor = brandGreen,
             headline = "Cook with\nconfidence",
             body = "Your entire recipe collection — always at your fingertips, online or off.",
         ),
@@ -102,13 +102,19 @@ fun OnboardingScreen(
               .statusBarsPadding()
               .navigationBarsPadding(),
   ) {
-    // Skip button — visible on pages 0 and 1 only
+    // Skip button — invisible on the last page but always occupies space so
+    // the pager and CTAs below don't shift when it disappears.
+    val isLastPage = pagerState.currentPage >= pages.lastIndex
     Box(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
         contentAlignment = Alignment.CenterEnd,
     ) {
-      if (pagerState.currentPage < pages.lastIndex) {
-        TextButton(onClick = onNavigateToSignIn) { Text("Skip") }
+      TextButton(
+          onClick = onNavigateToSignIn,
+          enabled = !isLastPage,
+          modifier = Modifier.alpha(if (isLastPage) 0f else 1f),
+      ) {
+        Text("Skip")
       }
     }
 
