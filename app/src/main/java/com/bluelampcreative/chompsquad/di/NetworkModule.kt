@@ -7,13 +7,13 @@ import com.bluelampcreative.chompsquad.data.remote.AuthEventBus
 import com.bluelampcreative.chompsquad.data.remote.dto.RefreshRequestDto
 import com.bluelampcreative.chompsquad.data.remote.dto.TokenResponseDto
 import io.ktor.client.HttpClient
+import io.ktor.client.HttpClientConfig
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
-import io.ktor.client.plugins.auth.providers.markAsRefreshTokenRequest
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
@@ -54,54 +54,57 @@ class NetworkModule {
             }
         level = if (BuildConfig.DEBUG) LogLevel.BODY else LogLevel.NONE
       }
-      install(Auth) {
-        bearer {
-          loadTokens {
-            val access = tokenRepository.getAccessToken() ?: return@loadTokens null
-            val refresh = tokenRepository.getRefreshToken() ?: return@loadTokens null
-            BearerTokens(access, refresh)
-          }
-          refreshTokens {
-            // oldTokens is null when loadTokens returned null (user not logged in).
-            // Return null so the 401 propagates — don't treat this as a session expiry.
-            val oldRefresh = oldTokens?.refreshToken ?: return@refreshTokens null
-
-            runCatching {
-                  client
-                      .post("v1/auth/refresh") {
-                        markAsRefreshTokenRequest()
-                        contentType(ContentType.Application.Json)
-                        setBody(RefreshRequestDto(oldRefresh))
-                      }
-                      .body<TokenResponseDto>()
-                }
-                .fold(
-                    onSuccess = { tokens ->
-                      tokenRepository.saveTokens(tokens.accessToken, tokens.refreshToken)
-                      BearerTokens(tokens.accessToken, tokens.refreshToken)
-                    },
-                    onFailure = { error ->
-                      // Only treat authentication failures (401/403) as a session expiry.
-                      // Transient errors (network, 5xx) propagate without clearing tokens
-                      // so the caller can retry or surface the error appropriately.
-                      if (error is ClientRequestException &&
-                          error.response.status.value in 401..403) {
-                        tokenRepository.clearTokens()
-                        authEventBus.emitSessionExpired()
-                      }
-                      null
-                    },
-                )
-          }
-          // Auth endpoints are self-authenticating (credentials in body) — no bearer header.
-          sendWithoutRequest { request -> !request.url.toString().contains("auth/") }
-        }
-      }
+      installBearerAuth(tokenRepository, authEventBus)
       expectSuccess = true
       defaultRequest {
         url(BuildConfig.API_BASE_URL)
         contentType(ContentType.Application.Json)
       }
+    }
+  }
+}
+
+private fun HttpClientConfig<*>.installBearerAuth(
+    tokenRepository: TokenRepository,
+    authEventBus: AuthEventBus,
+) {
+  install(Auth) {
+    bearer {
+      loadTokens {
+        val access = tokenRepository.getAccessToken() ?: return@loadTokens null
+        val refresh = tokenRepository.getRefreshToken() ?: return@loadTokens null
+        BearerTokens(access, refresh)
+      }
+      refreshTokens {
+        // oldTokens is null when loadTokens returned null (user not logged in).
+        // Return null so the 401 propagates — don't treat this as a session expiry.
+        val oldRefresh = oldTokens?.refreshToken ?: return@refreshTokens null
+        runCatching {
+              client
+                  .post("v1/auth/refresh") {
+                    contentType(ContentType.Application.Json)
+                    setBody(RefreshRequestDto(oldRefresh))
+                  }
+                  .body<TokenResponseDto>()
+            }
+            .fold(
+                onSuccess = { tokens ->
+                  tokenRepository.saveTokens(tokens.accessToken, tokens.refreshToken)
+                  BearerTokens(tokens.accessToken, tokens.refreshToken)
+                },
+                onFailure = { error ->
+                  // Only treat auth failures (401/403) as session expiry. Transient errors
+                  // (network, 5xx) propagate without clearing tokens so the caller can retry.
+                  if (error is ClientRequestException && error.response.status.value in 401..403) {
+                    tokenRepository.clearTokens()
+                    authEventBus.emitSessionExpired()
+                  }
+                  null
+                },
+            )
+      }
+      // Auth endpoints are self-authenticating (credentials in body) — no bearer header.
+      sendWithoutRequest { request -> !request.url.toString().contains("auth/") }
     }
   }
 }

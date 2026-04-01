@@ -29,4 +29,13 @@ sealed interface AppRoute : NavKey {
    * Implemented in task 3.8.
    */
   @Serializable data object Main : AppRoute
+
+  /** User profile tab. Implemented in task 1.5; wired into bottom-nav shell in task 3.8. */
+  @Serializable data object Profile : AppRoute
+
+  /** Settings pushed destination. Implemented in task 1.8. */
+  @Serializable data object Settings : AppRoute
+
+  /** Developer settings pushed destination — debug builds only. */
+  @Serializable data object DeveloperSettings : AppRoute
 }

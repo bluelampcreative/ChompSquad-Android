@@ -17,3 +17,4 @@ google.web.client.id=YOUR_WEB_CLIENT_ID.apps.googleusercontent.com
 # RevenueCat Android API key
 # Found in RevenueCat dashboard → Project → API Keys → Android public SDK key
 revenuecat.api.key.android=goog_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
