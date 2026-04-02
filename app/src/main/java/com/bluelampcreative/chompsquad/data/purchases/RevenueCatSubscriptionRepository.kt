@@ -79,54 +79,89 @@ class RevenueCatSubscriptionRepository(private val purchases: Purchases) : Subsc
     // a user who was previously confirmed as pro.
   }
 
-  override suspend fun getOfferings(): Offerings? =
-      runCatching {
-            suspendCancellableCoroutine { cont ->
-              purchases.getOfferings(
-                  object : ReceiveOfferingsCallback {
-                    override fun onReceived(offerings: Offerings) {
-                      if (cont.isActive) cont.resume(offerings)
-                    }
+  override suspend fun getOfferings(): Offerings? {
+    // Debug bypass — the placeholder API key cannot fulfil real SDK calls.
+    if (BuildConfig.DEBUG) return null
+    return runCatching {
+          suspendCancellableCoroutine { cont ->
+            purchases.getOfferings(
+                object : ReceiveOfferingsCallback {
+                  override fun onReceived(offerings: Offerings) {
+                    if (cont.isActive) cont.resume(offerings)
+                  }
 
-                    override fun onError(error: PurchasesError) {
-                      if (cont.isActive) {
-                        cont.resumeWithException(Exception("[${error.code}] ${error.message}"))
-                      }
+                  override fun onError(error: PurchasesError) {
+                    if (cont.isActive) {
+                      cont.resumeWithException(Exception("[${error.code}] ${error.message}"))
                     }
                   }
-              )
-            }
+                }
+            )
           }
-          .getOrNull()
+        }
+        .getOrNull()
+  }
 
   override suspend fun purchase(
       activity: ComponentActivity,
       packageItem: RCPackage,
-  ): Result<CustomerInfo> = runCatching {
-    suspendCancellableCoroutine { cont ->
-      purchases.purchase(
-          PurchaseParams.Builder(activity, packageItem).build(),
-          object : PurchaseCallback {
-            override fun onCompleted(
-                storeTransaction: StoreTransaction,
-                customerInfo: CustomerInfo,
-            ) {
-              if (cont.isActive) cont.resume(customerInfo)
-            }
-
-            override fun onError(error: PurchasesError, userCancelled: Boolean) {
-              if (cont.isActive) {
-                cont.resumeWithException(
-                    PurchaseException(
-                        message = "[${error.code}] ${error.message}",
-                        userCancelled = userCancelled,
-                    )
-                )
+  ): Result<CustomerInfo> {
+    // Debug bypass — SDK is not initialised in debug builds.
+    if (BuildConfig.DEBUG)
+        return Result.failure(PurchaseException("Debug build", userCancelled = true))
+    return runCatching {
+      suspendCancellableCoroutine { cont ->
+        purchases.purchase(
+            PurchaseParams.Builder(activity, packageItem).build(),
+            object : PurchaseCallback {
+              override fun onCompleted(
+                  storeTransaction: StoreTransaction,
+                  customerInfo: CustomerInfo,
+              ) {
+                if (cont.isActive) cont.resume(customerInfo)
               }
-            }
-          },
-      )
+
+              override fun onError(error: PurchasesError, userCancelled: Boolean) {
+                if (cont.isActive) {
+                  cont.resumeWithException(
+                      PurchaseException(
+                          message = "[${error.code}] ${error.message}",
+                          userCancelled = userCancelled,
+                      )
+                  )
+                }
+              }
+            },
+        )
+      }
     }
+  }
+
+  override suspend fun restorePurchases(): Result<Unit> {
+    // Debug bypass — SDK is not initialised in debug builds.
+    if (BuildConfig.DEBUG) return Result.success(Unit)
+    return runCatching {
+          suspendCancellableCoroutine { cont ->
+            purchases.restorePurchases(
+                object : ReceiveCustomerInfoCallback {
+                  override fun onReceived(customerInfo: CustomerInfo) {
+                    if (cont.isActive) cont.resume(customerInfo)
+                  }
+
+                  override fun onError(error: PurchasesError) {
+                    if (cont.isActive) {
+                      cont.resumeWithException(Exception("[${error.code}] ${error.message}"))
+                    }
+                  }
+                }
+            )
+          }
+        }
+        .onSuccess { customerInfo ->
+          val hasPro = customerInfo.entitlements[PRO_ENTITLEMENT_ID]?.isActive == true
+          _entitlementStatus.value = EntitlementStatus(hasPro = hasPro)
+        }
+        .map {}
   }
 }
 
