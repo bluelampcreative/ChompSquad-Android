@@ -25,4 +25,7 @@ sealed interface NavEvent {
    * authenticated screens are not reachable via back navigation.
    */
   data object NavigateToSignInClearStack : NavEvent
+
+  /** Push the Camera Capture screen (task 2.1). */
+  data object NavigateToCameraCapture : NavEvent
 }

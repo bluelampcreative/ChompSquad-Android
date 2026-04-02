@@ -17,6 +17,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.bluelampcreative.chompsquad.data.local.TokenRepository
 import com.bluelampcreative.chompsquad.data.remote.AuthEventBus
+import com.bluelampcreative.chompsquad.feature.camera.CameraScreen
 import com.bluelampcreative.chompsquad.feature.onboarding.OnboardingScreen
 import com.bluelampcreative.chompsquad.feature.paywall.PaywallScreen
 import com.bluelampcreative.chompsquad.feature.profile.ProfileScreen
@@ -80,6 +81,9 @@ fun ChompSquadApp() {
               AuthPlaceholderScreen(label = "Developer Settings")
             }
             entry<AppRoute.Paywall> { PaywallScreen(onNavEvent = { backStack.handleNavEvent(it) }) }
+            entry<AppRoute.CameraCapture> {
+              CameraScreen(onNavEvent = { backStack.handleNavEvent(it) })
+            }
           },
   )
 }
@@ -122,5 +126,6 @@ private fun NavBackStack<NavKey>.handleNavEvent(event: NavEvent) {
       clear()
       this += AppRoute.SignIn
     }
+    NavEvent.NavigateToCameraCapture -> this += AppRoute.CameraCapture
   }
 }

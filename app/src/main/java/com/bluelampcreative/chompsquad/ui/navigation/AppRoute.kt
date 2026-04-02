@@ -41,4 +41,7 @@ sealed interface AppRoute : NavKey {
 
   /** Paywall screen — subscription upgrade. Implemented in task 1.7. */
   @Serializable data object Paywall : AppRoute
+
+  /** Camera capture screen — up to 5 pages via CameraX or Photo Picker. Task 2.1. */
+  @Serializable data object CameraCapture : AppRoute
 }
