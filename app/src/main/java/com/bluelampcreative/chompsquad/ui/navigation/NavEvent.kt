@@ -16,4 +16,7 @@ sealed interface NavEvent {
 
   /** Push the Developer Settings screen (debug builds only). */
   data object NavigateToDeveloperSettings : NavEvent
+
+  /** Push the Paywall screen. */
+  data object NavigateToPaywall : NavEvent
 }
