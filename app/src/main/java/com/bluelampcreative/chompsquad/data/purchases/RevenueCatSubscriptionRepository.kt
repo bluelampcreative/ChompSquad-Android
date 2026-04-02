@@ -1,11 +1,18 @@
 package com.bluelampcreative.chompsquad.data.purchases
 
+import androidx.activity.ComponentActivity
 import com.bluelampcreative.chompsquad.BuildConfig
 import com.bluelampcreative.chompsquad.domain.model.EntitlementStatus
 import com.revenuecat.purchases.CustomerInfo
+import com.revenuecat.purchases.Offerings
+import com.revenuecat.purchases.Package as RCPackage
+import com.revenuecat.purchases.PurchaseParams
 import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.PurchasesError
+import com.revenuecat.purchases.interfaces.PurchaseCallback
 import com.revenuecat.purchases.interfaces.ReceiveCustomerInfoCallback
+import com.revenuecat.purchases.interfaces.ReceiveOfferingsCallback
+import com.revenuecat.purchases.models.StoreTransaction
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.CoroutineScope
@@ -54,7 +61,9 @@ class RevenueCatSubscriptionRepository(private val purchases: Purchases) : Subsc
                   override fun onError(error: PurchasesError) {
                     if (cont.isActive) {
                       cont.resumeWithException(
-                          Exception("[${error.code}] ${error.message} (underlyingError=${error.underlyingErrorMessage})")
+                          Exception(
+                              "[${error.code}] ${error.message} (underlyingError=${error.underlyingErrorMessage})"
+                          )
                       )
                     }
                   }
@@ -69,4 +78,60 @@ class RevenueCatSubscriptionRepository(private val purchases: Purchases) : Subsc
     // On failure, retain the last-known status. Transient network errors should not downgrade
     // a user who was previously confirmed as pro.
   }
+
+  override suspend fun getOfferings(): Offerings? =
+      runCatching {
+            suspendCancellableCoroutine { cont ->
+              purchases.getOfferings(
+                  object : ReceiveOfferingsCallback {
+                    override fun onReceived(offerings: Offerings) {
+                      if (cont.isActive) cont.resume(offerings)
+                    }
+
+                    override fun onError(error: PurchasesError) {
+                      if (cont.isActive) {
+                        cont.resumeWithException(Exception("[${error.code}] ${error.message}"))
+                      }
+                    }
+                  }
+              )
+            }
+          }
+          .getOrNull()
+
+  override suspend fun purchase(
+      activity: ComponentActivity,
+      packageItem: RCPackage,
+  ): Result<CustomerInfo> = runCatching {
+    suspendCancellableCoroutine { cont ->
+      purchases.purchase(
+          PurchaseParams.Builder(activity, packageItem).build(),
+          object : PurchaseCallback {
+            override fun onCompleted(
+                storeTransaction: StoreTransaction,
+                customerInfo: CustomerInfo,
+            ) {
+              if (cont.isActive) cont.resume(customerInfo)
+            }
+
+            override fun onError(error: PurchasesError, userCancelled: Boolean) {
+              if (cont.isActive) {
+                cont.resumeWithException(
+                    PurchaseException(
+                        message = "[${error.code}] ${error.message}",
+                        userCancelled = userCancelled,
+                    )
+                )
+              }
+            }
+          },
+      )
+    }
+  }
 }
+
+/**
+ * Thrown when a RevenueCat purchase fails. [userCancelled] is true when the user dismissed the
+ * flow.
+ */
+class PurchaseException(message: String, val userCancelled: Boolean) : Exception(message)

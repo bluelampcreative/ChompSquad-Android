@@ -38,4 +38,7 @@ sealed interface AppRoute : NavKey {
 
   /** Developer settings pushed destination — debug builds only. */
   @Serializable data object DeveloperSettings : AppRoute
+
+  /** Paywall screen — subscription upgrade. Implemented in task 1.7. */
+  @Serializable data object Paywall : AppRoute
 }
