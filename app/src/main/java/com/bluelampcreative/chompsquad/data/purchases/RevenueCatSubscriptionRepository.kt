@@ -128,6 +128,29 @@ class RevenueCatSubscriptionRepository(private val purchases: Purchases) : Subsc
       )
     }
   }
+
+  override suspend fun restorePurchases(): Result<CustomerInfo> =
+      runCatching {
+            suspendCancellableCoroutine { cont ->
+              purchases.restorePurchases(
+                  object : ReceiveCustomerInfoCallback {
+                    override fun onReceived(customerInfo: CustomerInfo) {
+                      if (cont.isActive) cont.resume(customerInfo)
+                    }
+
+                    override fun onError(error: PurchasesError) {
+                      if (cont.isActive) {
+                        cont.resumeWithException(Exception("[${error.code}] ${error.message}"))
+                      }
+                    }
+                  }
+              )
+            }
+          }
+          .onSuccess { customerInfo ->
+            val hasPro = customerInfo.entitlements[PRO_ENTITLEMENT_ID]?.isActive == true
+            _entitlementStatus.value = EntitlementStatus(hasPro = hasPro)
+          }
 }
 
 /**

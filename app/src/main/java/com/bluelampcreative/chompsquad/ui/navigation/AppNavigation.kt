@@ -20,6 +20,7 @@ import com.bluelampcreative.chompsquad.data.remote.AuthEventBus
 import com.bluelampcreative.chompsquad.feature.onboarding.OnboardingScreen
 import com.bluelampcreative.chompsquad.feature.paywall.PaywallScreen
 import com.bluelampcreative.chompsquad.feature.profile.ProfileScreen
+import com.bluelampcreative.chompsquad.feature.settings.SettingsScreen
 import com.bluelampcreative.chompsquad.feature.signin.SignInScreen
 import com.bluelampcreative.chompsquad.feature.signup.SignUpScreen
 import org.koin.compose.koinInject
@@ -73,8 +74,7 @@ fun ChompSquadApp() {
             }
             entry<AppRoute.Profile> { ProfileScreen(onNavEvent = { backStack.handleNavEvent(it) }) }
             entry<AppRoute.Settings> {
-              // TODO(task 1.8): implement Settings screen
-              AuthPlaceholderScreen(label = "Settings")
+              SettingsScreen(onNavEvent = { backStack.handleNavEvent(it) })
             }
             entry<AppRoute.DeveloperSettings> {
               AuthPlaceholderScreen(label = "Developer Settings")

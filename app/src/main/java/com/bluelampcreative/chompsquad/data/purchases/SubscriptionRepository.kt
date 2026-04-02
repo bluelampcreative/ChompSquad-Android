@@ -35,4 +35,10 @@ interface SubscriptionRepository {
    * Must be called from a UI context — [activity] is required by the Play Billing flow.
    */
   suspend fun purchase(activity: ComponentActivity, packageItem: RCPackage): Result<CustomerInfo>
+
+  /**
+   * Restores previous Google Play purchases for the current user via RevenueCat and updates
+   * [entitlementStatus]. Returns a [Result] wrapping [CustomerInfo] on success.
+   */
+  suspend fun restorePurchases(): Result<CustomerInfo>
 }

@@ -8,6 +8,7 @@ import com.bluelampcreative.chompsquad.data.remote.dto.SignUpRequestDto
 import com.bluelampcreative.chompsquad.data.remote.dto.TokenResponseDto
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.delete
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import org.koin.core.annotation.Singleton
@@ -61,4 +62,10 @@ class AuthApi(private val client: HttpClient) {
   suspend fun logout(refreshToken: String): Result<Unit> = runCatching {
     client.post("v1/auth/logout") { setBody(LogoutRequestDto(refreshToken)) }
   }
+
+  /**
+   * Permanently deletes the authenticated user's account and all associated data. `DELETE
+   * /v1/users/me` → 204
+   */
+  suspend fun deleteAccount(): Result<Unit> = runCatching { client.delete("v1/users/me") }
 }
