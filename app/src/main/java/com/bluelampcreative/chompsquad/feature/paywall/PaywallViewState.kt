@@ -35,6 +35,9 @@ sealed interface PaywallAction : ViewAction {
 
   data object PurchaseStarted : PaywallAction
 
+  /** Purchase was cancelled by the user — resets purchasing state without showing an error. */
+  data object PurchaseCancelled : PaywallAction
+
   data class ShowError(val message: String) : PaywallAction
 
   data object DismissError : PaywallAction

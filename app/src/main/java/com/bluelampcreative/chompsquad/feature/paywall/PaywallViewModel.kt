@@ -29,6 +29,7 @@ class PaywallViewModel(
             )
         is PaywallAction.SelectPeriod -> state.copy(selectedPeriod = action.period)
         is PaywallAction.PurchaseStarted -> state.copy(isPurchasing = true, errorMessage = null)
+        is PaywallAction.PurchaseCancelled -> state.copy(isPurchasing = false)
         is PaywallAction.ShowError ->
             state.copy(isPurchasing = false, errorMessage = action.message)
         is PaywallAction.DismissError -> state.copy(errorMessage = null)
@@ -66,22 +67,21 @@ class PaywallViewModel(
 
     viewModelScope.launch {
       state.dispatch(PaywallAction.PurchaseStarted)
-      subscriptionRepository
-          .purchase(activity, selectedPackage)
-          .onSuccess {
-            subscriptionRepository.refreshEntitlements()
-            navigate(NavEvent.GoBack)
-          }
-          .onFailure { error ->
-            // Silently dismiss if the user cancelled — no error toast needed.
-            if (error is PurchaseException && error.userCancelled) {
-              state.dispatch(PaywallAction.DismissError)
-            } else {
-              state.dispatch(
-                  PaywallAction.ShowError(error.message ?: "Purchase failed. Please try again.")
-              )
-            }
-          }
+      val purchaseResult = subscriptionRepository.purchase(activity, selectedPackage)
+      if (purchaseResult.isFailure) {
+        val error = purchaseResult.exceptionOrNull()
+        // Silently reset state if the user cancelled — no error toast needed.
+        if (error is PurchaseException && error.userCancelled) {
+          state.dispatch(PaywallAction.PurchaseCancelled)
+        } else {
+          state.dispatch(
+              PaywallAction.ShowError(error?.message ?: "Purchase failed. Please try again.")
+          )
+        }
+        return@launch
+      }
+      subscriptionRepository.refreshEntitlements()
+      navigate(NavEvent.GoBack)
     }
   }
 }

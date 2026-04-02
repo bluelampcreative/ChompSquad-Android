@@ -172,6 +172,7 @@ fun PaywallScreen(
         // Purchase CTA
         PurchaseButton(
             viewState = viewState,
+            activityAvailable = activity != null,
             onClick = { activity?.let { onHandleEvent(PaywallUiEvent.OnPurchase(it)) } },
         )
 
@@ -333,13 +334,21 @@ private fun PriceDisplay(viewState: PaywallViewState) {
 }
 
 @Composable
-private fun PurchaseButton(viewState: PaywallViewState, onClick: () -> Unit) {
+private fun PurchaseButton(
+    viewState: PaywallViewState,
+    activityAvailable: Boolean,
+    onClick: () -> Unit,
+) {
   val selectedPackage =
       when (viewState.selectedPeriod) {
         BillingPeriod.Monthly -> viewState.monthlyPackage
         BillingPeriod.Annual -> viewState.annualPackage
       }
-  val enabled = !viewState.isLoadingOfferings && !viewState.isPurchasing && selectedPackage != null
+  val enabled =
+      activityAvailable &&
+          !viewState.isLoadingOfferings &&
+          !viewState.isPurchasing &&
+          selectedPackage != null
 
   Button(
       onClick = onClick,
