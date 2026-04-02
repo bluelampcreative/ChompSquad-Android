@@ -48,11 +48,15 @@ class RevenueCatSubscriptionRepository(private val purchases: Purchases) : Subsc
             purchases.getCustomerInfo(
                 object : ReceiveCustomerInfoCallback {
                   override fun onReceived(customerInfo: CustomerInfo) {
-                    cont.resume(customerInfo)
+                    if (cont.isActive) cont.resume(customerInfo)
                   }
 
                   override fun onError(error: PurchasesError) {
-                    cont.resumeWithException(Exception(error.message))
+                    if (cont.isActive) {
+                      cont.resumeWithException(
+                          Exception("[${error.code}] ${error.message} (underlyingError=${error.underlyingErrorMessage})")
+                      )
+                    }
                   }
                 }
             )

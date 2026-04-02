@@ -36,20 +36,18 @@ class SignUpViewModel(
   private fun handleGoogleSignIn(idToken: String) {
     viewModelScope.launch {
       state.dispatch(SignUpAction.StartLoading)
-      authApi
-          .signInWithGoogle(idToken)
-          .onSuccess { response ->
-            tokenRepository.saveTokens(response.accessToken, response.refreshToken)
-            subscriptionRepository.refreshEntitlements()
-            navigate(NavEvent.NavigateToMain)
-          }
-          .onFailure { error ->
+      val response =
+          authApi.signInWithGoogle(idToken).getOrElse { error ->
             state.dispatch(
                 SignUpAction.ShowError(
                     error.toAuthErrorMessage("Account creation failed. Please try again.")
                 )
             )
+            return@launch
           }
+      tokenRepository.saveTokens(response.accessToken, response.refreshToken)
+      subscriptionRepository.refreshEntitlements()
+      navigate(NavEvent.NavigateToMain)
     }
   }
 
@@ -57,20 +55,18 @@ class SignUpViewModel(
     val screenName = email.substringBefore('@').ifBlank { email }
     viewModelScope.launch {
       state.dispatch(SignUpAction.StartLoading)
-      authApi
-          .signUp(email, password, screenName)
-          .onSuccess { response ->
-            tokenRepository.saveTokens(response.accessToken, response.refreshToken)
-            subscriptionRepository.refreshEntitlements()
-            navigate(NavEvent.NavigateToMain)
-          }
-          .onFailure { error ->
+      val response =
+          authApi.signUp(email, password, screenName).getOrElse { error ->
             state.dispatch(
                 SignUpAction.ShowError(
                     error.toAuthErrorMessage("Account creation failed. Please try again.")
                 )
             )
+            return@launch
           }
+      tokenRepository.saveTokens(response.accessToken, response.refreshToken)
+      subscriptionRepository.refreshEntitlements()
+      navigate(NavEvent.NavigateToMain)
     }
   }
 }
