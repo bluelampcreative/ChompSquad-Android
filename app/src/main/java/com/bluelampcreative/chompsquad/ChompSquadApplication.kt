@@ -4,6 +4,7 @@ import android.app.Application
 import com.bluelampcreative.chompsquad.di.DataModule
 import com.bluelampcreative.chompsquad.di.NetworkModule
 import com.bluelampcreative.chompsquad.di.PurchasesModule
+import com.bluelampcreative.chompsquad.di.ScannerModule
 import com.bluelampcreative.chompsquad.di.ViewModelModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -18,6 +19,7 @@ import org.koin.plugin.module.dsl.startKoin
             DataModule::class,
             NetworkModule::class,
             PurchasesModule::class,
+            ScannerModule::class,
         ]
 )
 private object KoinConfig
