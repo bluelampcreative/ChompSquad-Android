@@ -4,11 +4,13 @@ import android.content.Context
 import com.bluelampcreative.chompsquad.BuildConfig
 import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.PurchasesConfiguration
+import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Singleton
 
 @Module
+@ComponentScan("com.bluelampcreative.chompsquad.data.purchases")
 @Configuration
 class PurchasesModule {
   @Singleton

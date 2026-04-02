@@ -3,6 +3,7 @@ package com.bluelampcreative.chompsquad.feature.signin
 import androidx.lifecycle.viewModelScope
 import com.bluelampcreative.chompsquad.core.CoreViewModel
 import com.bluelampcreative.chompsquad.data.local.TokenRepository
+import com.bluelampcreative.chompsquad.data.purchases.SubscriptionRepository
 import com.bluelampcreative.chompsquad.data.remote.AuthApi
 import com.bluelampcreative.chompsquad.data.remote.toAuthErrorMessage
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
@@ -13,6 +14,7 @@ import org.koin.core.annotation.KoinViewModel
 class SignInViewModel(
     private val authApi: AuthApi,
     private val tokenRepository: TokenRepository,
+    private val subscriptionRepository: SubscriptionRepository,
 ) : CoreViewModel<SignInViewState, SignInAction, SignInUiEvent>(SignInViewState()) {
 
   override fun reducer(state: SignInViewState, action: SignInAction): SignInViewState =
@@ -34,19 +36,18 @@ class SignInViewModel(
   private fun signInWithEmail(email: String, password: String) {
     viewModelScope.launch {
       state.dispatch(SignInAction.StartLoading)
-      authApi
-          .signInWithEmail(email, password)
-          .onSuccess { response ->
-            tokenRepository.saveTokens(response.accessToken, response.refreshToken)
-            navigate(NavEvent.NavigateToMain)
-          }
-          .onFailure { error ->
+      val response =
+          authApi.signInWithEmail(email, password).getOrElse { error ->
             state.dispatch(
                 SignInAction.ShowError(
                     error.toAuthErrorMessage("Sign in failed. Please try again.")
                 )
             )
+            return@launch
           }
+      tokenRepository.saveTokens(response.accessToken, response.refreshToken)
+      subscriptionRepository.refreshEntitlements()
+      navigate(NavEvent.NavigateToMain)
     }
   }
 
@@ -61,19 +62,18 @@ class SignInViewModel(
   private fun signInWithGoogle(idToken: String) {
     viewModelScope.launch {
       state.dispatch(SignInAction.StartLoading)
-      authApi
-          .signInWithGoogle(idToken)
-          .onSuccess { response ->
-            tokenRepository.saveTokens(response.accessToken, response.refreshToken)
-            navigate(NavEvent.NavigateToMain)
-          }
-          .onFailure { error ->
+      val response =
+          authApi.signInWithGoogle(idToken).getOrElse { error ->
             state.dispatch(
                 SignInAction.ShowError(
                     error.toAuthErrorMessage("Sign in failed. Please try again.")
                 )
             )
+            return@launch
           }
+      tokenRepository.saveTokens(response.accessToken, response.refreshToken)
+      subscriptionRepository.refreshEntitlements()
+      navigate(NavEvent.NavigateToMain)
     }
   }
 }
