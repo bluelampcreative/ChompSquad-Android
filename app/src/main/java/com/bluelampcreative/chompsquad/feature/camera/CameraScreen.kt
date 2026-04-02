@@ -1,9 +1,10 @@
 package com.bluelampcreative.chompsquad.feature.camera
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import androidx.activity.ComponentActivity
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.PickMultipleVisualMedia
@@ -43,6 +44,7 @@ import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.FlipCameraAndroid
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -53,8 +55,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,11 +70,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.bluelampcreative.chompsquad.feature.signin.findActivity
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
 import java.io.File
 import kotlin.coroutines.resume
@@ -93,12 +98,13 @@ fun CameraScreen(
   // Runtime CAMERA permission
   val permissionLauncher =
       rememberLauncherForActivityResult(RequestPermission()) { granted ->
+        // shouldShowRequestPermissionRationale requires an Activity; fall back to false (treat
+        // as non-permanent) if the context can't be unwrapped — e.g. in Compose Preview hosts.
+        val activity = context.findActivity()
         val permanent =
             !granted &&
-                !ActivityCompat.shouldShowRequestPermissionRationale(
-                    context as ComponentActivity,
-                    Manifest.permission.CAMERA,
-                )
+                (activity == null ||
+                    !activity.shouldShowRequestPermissionRationale(Manifest.permission.CAMERA))
         viewModel.handleEvent(CameraUiEvent.OnPermissionResult(granted, permanent))
       }
   LaunchedEffect(Unit) {
@@ -114,12 +120,29 @@ fun CameraScreen(
     }
   }
 
+  // Resolve the permission action for the rationale screen before entering composition.
+  val permissionAction: () -> Unit =
+      if (viewState.permissionPermanentlyDenied) {
+        {
+          runCatching {
+            context.startActivity(
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                  data = Uri.fromParts("package", context.packageName, null)
+                }
+            )
+          }
+        }
+      } else {
+        { permissionLauncher.launch(Manifest.permission.CAMERA) }
+      }
+
   CameraScreenContent(
       viewState = viewState,
       onHandleEvent = viewModel::handleEvent,
       onCaptureStart = viewModel::onCaptureStarted,
       onImageCapture = viewModel::onImageCaptured,
       onCaptureFail = viewModel::onCaptureFailed,
+      onPermissionAction = permissionAction,
       modifier = modifier,
   )
 }
@@ -131,6 +154,7 @@ private fun CameraScreenContent(
     onCaptureStart: () -> Unit,
     onImageCapture: (Uri) -> Unit,
     onCaptureFail: () -> Unit,
+    onPermissionAction: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
   Box(modifier = modifier.fillMaxSize()) {
@@ -138,6 +162,7 @@ private fun CameraScreenContent(
       PermissionContent(
           permanentlyDenied = viewState.permissionPermanentlyDenied,
           onClose = { onHandleEvent(CameraUiEvent.OnClose) },
+          onAction = onPermissionAction,
       )
     } else {
       LiveCameraContent(
@@ -169,11 +194,17 @@ private fun LiveCameraContent(
   val previewView = remember { PreviewView(context) }
   val imageCapture = remember { ImageCapture.Builder().build() }
 
-  // Photo picker — pick up to MAX_SCAN_IMAGES; reducer enforces the cap
+  // Photo picker — limited to remaining capacity so the system picker shows the correct max.
+  // key() forces re-registration when remaining slots change (safe: picker is always closed
+  // before the count updates).
+  val remaining = MAX_SCAN_IMAGES - viewState.capturedImages.size
   val photoPickerLauncher =
-      rememberLauncherForActivityResult(PickMultipleVisualMedia(maxItems = MAX_SCAN_IMAGES)) { uris
-        ->
-        if (uris.isNotEmpty()) onHandleEvent(CameraUiEvent.OnImagesSelected(uris))
+      key(remaining) {
+        rememberLauncherForActivityResult(
+            PickMultipleVisualMedia(maxItems = maxOf(1, remaining))
+        ) { uris ->
+          if (uris.isNotEmpty()) onHandleEvent(CameraUiEvent.OnImagesSelected(uris))
+        }
       }
 
   // Bind/rebind camera when lens facing changes
@@ -213,8 +244,12 @@ private fun LiveCameraContent(
   }
 
   val canCapture = viewState.capturedImages.size < MAX_SCAN_IMAGES && !viewState.isCapturing
+  // Immediate in-composable lock prevents concurrent captures from fast double-taps before the
+  // reducer's isCapturing flag propagates back through recomposition.
+  var captureLock by remember { mutableStateOf(false) }
   val onCapture = {
-    if (canCapture) {
+    if (canCapture && !captureLock) {
+      captureLock = true
       onCaptureStart()
       val outputDir = File(context.cacheDir, "scan_images").also { it.mkdirs() }
       val file = File(outputDir, "scan_${System.currentTimeMillis()}.jpg")
@@ -223,10 +258,14 @@ private fun LiveCameraContent(
           ContextCompat.getMainExecutor(context),
           object : ImageCapture.OnImageSavedCallback {
             override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+              captureLock = false
               onImageCapture(output.savedUri ?: Uri.fromFile(file))
             }
 
-            override fun onError(exception: ImageCaptureException) = onCaptureFail()
+            override fun onError(exception: ImageCaptureException) {
+              captureLock = false
+              onCaptureFail()
+            }
           },
       )
     }
@@ -445,7 +484,11 @@ private fun ThumbnailStrip(
 }
 
 @Composable
-private fun PermissionContent(permanentlyDenied: Boolean, onClose: () -> Unit) {
+private fun PermissionContent(
+    permanentlyDenied: Boolean,
+    onClose: () -> Unit,
+    onAction: () -> Unit,
+) {
   Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
     IconButton(
         onClick = onClose,
@@ -477,6 +520,10 @@ private fun PermissionContent(permanentlyDenied: Boolean, onClose: () -> Unit) {
               ),
           textAlign = TextAlign.Center,
       )
+      Spacer(Modifier.height(24.dp))
+      Button(onClick = onAction) {
+        Text(if (permanentlyDenied) "Open Settings" else "Allow Camera Access")
+      }
     }
   }
 }

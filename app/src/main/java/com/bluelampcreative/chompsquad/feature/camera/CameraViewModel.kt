@@ -28,10 +28,12 @@ class CameraViewModel :
         is CameraAction.CaptureStarted -> state.copy(isCapturing = true)
         is CameraAction.CaptureFailed -> state.copy(isCapturing = false)
         is CameraAction.ImageRemoved ->
-            state.copy(
-                capturedImages =
-                    state.capturedImages.toMutableList().also { it.removeAt(action.index) }
-            )
+            if (action.index in state.capturedImages.indices)
+                state.copy(
+                    capturedImages =
+                        state.capturedImages.toMutableList().also { it.removeAt(action.index) }
+                )
+            else state
         is CameraAction.FlashToggled ->
             state.copy(
                 flashMode =
