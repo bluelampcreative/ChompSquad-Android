@@ -66,7 +66,7 @@ class SettingsViewModel(
           state.dispatch(SettingsAction.DismissDeleteAccountDialog)
       SettingsUiEvent.OnRestorePurchases -> restorePurchases()
       SettingsUiEvent.OnUpgradeToPro -> navigate(NavEvent.NavigateToPaywall)
-      SettingsUiEvent.OnEditProfile -> navigate(NavEvent.GoBack)
+      SettingsUiEvent.OnManageProfile -> navigate(NavEvent.GoBack)
       SettingsUiEvent.OnDismissError -> state.dispatch(SettingsAction.DismissError)
       // URL-opening events are handled in the composable (require Context).
       SettingsUiEvent.OnNotifications,
@@ -95,7 +95,7 @@ class SettingsViewModel(
         authApi.logout(refreshToken)
       }
       tokenRepository.clearTokens()
-      navigate(NavEvent.NavigateToSignIn)
+      navigate(NavEvent.NavigateToSignInClearStack)
     }
   }
 
@@ -112,7 +112,7 @@ class SettingsViewModel(
         return@launch
       }
       tokenRepository.clearTokens()
-      navigate(NavEvent.NavigateToSignIn)
+      navigate(NavEvent.NavigateToSignInClearStack)
     }
   }
 

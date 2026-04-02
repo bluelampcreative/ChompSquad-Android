@@ -118,5 +118,9 @@ private fun NavBackStack<NavKey>.handleNavEvent(event: NavEvent) {
     NavEvent.NavigateToSettings -> this += AppRoute.Settings
     NavEvent.NavigateToDeveloperSettings -> this += AppRoute.DeveloperSettings
     NavEvent.NavigateToPaywall -> this += AppRoute.Paywall
+    NavEvent.NavigateToSignInClearStack -> {
+      clear()
+      this += AppRoute.SignIn
+    }
   }
 }

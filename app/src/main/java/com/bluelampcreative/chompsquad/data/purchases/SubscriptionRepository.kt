@@ -40,5 +40,9 @@ interface SubscriptionRepository {
    * Restores previous Google Play purchases for the current user via RevenueCat and updates
    * [entitlementStatus]. Returns a [Result] wrapping [CustomerInfo] on success.
    */
-  suspend fun restorePurchases(): Result<CustomerInfo>
+  /**
+   * Restores previous Google Play purchases for the current user via RevenueCat and updates
+   * [entitlementStatus]. Returns [Result.success] on success (including the debug-bypass path).
+   */
+  suspend fun restorePurchases(): Result<Unit>
 }

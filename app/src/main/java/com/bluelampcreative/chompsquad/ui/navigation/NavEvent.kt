@@ -19,4 +19,10 @@ sealed interface NavEvent {
 
   /** Push the Paywall screen. */
   data object NavigateToPaywall : NavEvent
+
+  /**
+   * Clear the entire back stack and show Sign In. Used after sign-out or account deletion so
+   * authenticated screens are not reachable via back navigation.
+   */
+  data object NavigateToSignInClearStack : NavEvent
 }

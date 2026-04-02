@@ -59,7 +59,7 @@ sealed interface SettingsUiEvent {
 
   data object OnUpgradeToPro : SettingsUiEvent
 
-  data object OnEditProfile : SettingsUiEvent
+  data object OnManageProfile : SettingsUiEvent
 
   data object OnNotifications : SettingsUiEvent
 

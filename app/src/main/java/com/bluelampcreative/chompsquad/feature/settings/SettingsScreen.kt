@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -35,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bluelampcreative.chompsquad.BuildConfig
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
@@ -43,8 +45,8 @@ import com.bluelampcreative.chompsquad.ui.theme.ChompSquadTheme
 import com.bluelampcreative.chompsquad.ui.theme.debugAmber
 import org.koin.androidx.compose.koinViewModel
 
-private const val URL_MANAGE_BILLING =
-    "https://play.google.com/store/account/subscriptions?package=com.bluelampcreative.chompsquad"
+private val URL_MANAGE_BILLING =
+    "https://play.google.com/store/account/subscriptions?package=${BuildConfig.APPLICATION_ID}"
 private const val URL_PRIVACY_POLICY = "https://chompsquad.app/privacy"
 private const val URL_TERMS_OF_SERVICE = "https://chompsquad.app/terms"
 private const val EMAIL_SUPPORT = "support@chompsquad.app"
@@ -65,15 +67,23 @@ fun SettingsScreen(
       onHandleEvent = { event ->
         when (event) {
           SettingsUiEvent.OnManageBilling ->
-              context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(URL_MANAGE_BILLING)))
+              runCatching {
+                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(URL_MANAGE_BILLING)))
+              }
           SettingsUiEvent.OnContactSupport ->
-              context.startActivity(
-                  Intent(Intent.ACTION_SENDTO).apply { data = Uri.parse("mailto:$EMAIL_SUPPORT") }
-              )
+              runCatching {
+                context.startActivity(
+                    Intent(Intent.ACTION_SENDTO).apply { data = Uri.parse("mailto:$EMAIL_SUPPORT") }
+                )
+              }
           SettingsUiEvent.OnPrivacyPolicy ->
-              context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(URL_PRIVACY_POLICY)))
+              runCatching {
+                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(URL_PRIVACY_POLICY)))
+              }
           SettingsUiEvent.OnTermsOfService ->
-              context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(URL_TERMS_OF_SERVICE)))
+              runCatching {
+                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(URL_TERMS_OF_SERVICE)))
+              }
           else -> viewModel.handleEvent(event)
         }
       },
@@ -235,7 +245,7 @@ private fun AccountSection(
       )
       HorizontalDivider()
       ListItem(
-          headlineContent = { Text("Edit Profile") },
+          headlineContent = { Text("Manage Profile") },
           trailingContent = {
             Icon(
                 Icons.Default.ChevronRight,
@@ -244,7 +254,7 @@ private fun AccountSection(
             )
           },
           colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-          modifier = Modifier.clickable { onHandleEvent(SettingsUiEvent.OnEditProfile) },
+          modifier = Modifier.clickable { onHandleEvent(SettingsUiEvent.OnManageProfile) },
       )
     }
   }
@@ -289,7 +299,7 @@ private fun SubscriptionSection(
       ListItem(
           headlineContent = {
             if (viewState.isRestoringPurchases) {
-              CircularProgressIndicator()
+              CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
             } else {
               Text("Restore Purchases", color = MaterialTheme.colorScheme.primary)
             }
@@ -357,7 +367,7 @@ private fun DangerZoneSection(
       ListItem(
           headlineContent = {
             if (viewState.isSigningOut) {
-              CircularProgressIndicator()
+              CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
             } else {
               Text(
                   "Sign Out",
@@ -376,7 +386,7 @@ private fun DangerZoneSection(
       ListItem(
           headlineContent = {
             if (viewState.isDeletingAccount) {
-              CircularProgressIndicator()
+              CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
             } else {
               Text(
                   "Delete Account",
