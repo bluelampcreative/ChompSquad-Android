@@ -64,10 +64,11 @@ fun MainShellScreen(onNavEvent: (NavEvent) -> Unit) {
       },
   ) { innerPadding ->
     when (selectedTab) {
-      MainTab.CATALOG -> TabPlaceholder("Catalog", modifier = Modifier.padding(innerPadding))
       // SCAN never becomes the active tab — handled via nav event above.
-      MainTab.SCAN -> TabPlaceholder("Scan", modifier = Modifier.padding(innerPadding))
-      MainTab.PLANNER -> TabPlaceholder("Planner", modifier = Modifier.padding(innerPadding))
+      MainTab.CATALOG,
+      MainTab.SCAN,
+      MainTab.PLANNER ->
+          TabPlaceholder(selectedTab.label, modifier = Modifier.padding(innerPadding))
       MainTab.PROFILE ->
           ProfileScreen(onNavEvent = currentOnNavEvent, modifier = Modifier.padding(innerPadding))
     }
