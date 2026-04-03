@@ -68,7 +68,7 @@
 - [x] **2.1** `UI` — Camera capture screen — single and multi-image capture (up to 5 pages) via CameraX; Photo Picker API for library selection; M3 Expressive FAB for shutter in brand green
 - [x] **2.2** `Data` — Image pre-processing — resize to 2048 px, JPEG 0.78 quality, 2 MB hard cap; CPU-bound work on `Dispatchers.Default`; pure Kotlin / Android Bitmap — no networking dependency
 - [x] **2.3** `UI` — Scan submission & loading state — multipart `POST` to backend via Ktor `submitFormWithBinaryData`; per-page loading message; 45 s socket timeout configured on `HttpClient`; 1 auto-retry on 504 via Ktor `HttpRequestRetry` plugin
-- [ ] **2.4** `UI` — Scan result review screen — extracted recipe rendered in canonical schema; field-level inline editing before saving; M3 Expressive card / text-field styles
+- [x] **2.4** `UI` — Scan result review screen — extracted recipe rendered in canonical schema; field-level inline editing before saving; M3 Expressive card / text-field styles
 - [ ] **2.5** `UI` — Ingredient list editor — add, remove, reorder (drag handle via `LazyColumn` reorder); quantity / unit / prep-note fields; 48 dp min row height
 - [ ] **2.6** `UI` — Steps editor — add, remove, reorder numbered instruction steps with drag-to-reorder; same reorder pattern as 2.5
 - [ ] **2.7** `Data` — Save recipe — `POST /v1/recipes` via Ktor; write-through to local Room database; haptic + M3 Expressive spring animation confirmation *(follow data management pattern)*
