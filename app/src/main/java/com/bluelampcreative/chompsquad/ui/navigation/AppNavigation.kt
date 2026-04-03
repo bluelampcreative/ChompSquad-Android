@@ -21,6 +21,7 @@ import com.bluelampcreative.chompsquad.feature.camera.CameraScreen
 import com.bluelampcreative.chompsquad.feature.onboarding.OnboardingScreen
 import com.bluelampcreative.chompsquad.feature.paywall.PaywallScreen
 import com.bluelampcreative.chompsquad.feature.profile.ProfileScreen
+import com.bluelampcreative.chompsquad.feature.scan.ScanResultScreen
 import com.bluelampcreative.chompsquad.feature.scan.ScanSubmissionScreen
 import com.bluelampcreative.chompsquad.feature.settings.SettingsScreen
 import com.bluelampcreative.chompsquad.feature.signin.SignInScreen
@@ -89,8 +90,7 @@ fun ChompSquadApp() {
               ScanSubmissionScreen(onNavEvent = { backStack.handleNavEvent(it) })
             }
             entry<AppRoute.ScanResult> {
-              // TODO(task 2.4): implement scan result review screen
-              AuthPlaceholderScreen(label = "Scan Result")
+              ScanResultScreen(onNavEvent = { backStack.handleNavEvent(it) })
             }
           },
   )
