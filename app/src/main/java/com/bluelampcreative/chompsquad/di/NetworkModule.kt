@@ -11,6 +11,8 @@ import io.ktor.client.HttpClientConfig
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.HttpRequestRetry
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
@@ -45,6 +47,11 @@ class NetworkModule {
             }
         )
       }
+      install(HttpTimeout) { socketTimeoutMillis = SOCKET_TIMEOUT_MS }
+      install(HttpRequestRetry) {
+        maxRetries = 1
+        retryIf { _, response -> response.status.value == HTTP_GATEWAY_TIMEOUT }
+      }
       install(Logging) {
         logger =
             object : Logger {
@@ -63,6 +70,9 @@ class NetworkModule {
     }
   }
 }
+
+private const val SOCKET_TIMEOUT_MS = 45_000L
+private const val HTTP_GATEWAY_TIMEOUT = 504
 
 private fun HttpClientConfig<*>.installBearerAuth(
     tokenRepository: TokenRepository,

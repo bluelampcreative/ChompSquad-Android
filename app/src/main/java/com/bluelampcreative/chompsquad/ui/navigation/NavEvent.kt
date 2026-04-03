@@ -28,4 +28,10 @@ sealed interface NavEvent {
 
   /** Push the Camera Capture screen (task 2.1). */
   data object NavigateToCameraCapture : NavEvent
+
+  /** Push the Scan Submission screen (task 2.3). */
+  data object NavigateToScanSubmission : NavEvent
+
+  /** Replace the Scan Submission screen with the Scan Result screen (task 2.4). */
+  data object NavigateToScanResult : NavEvent
 }

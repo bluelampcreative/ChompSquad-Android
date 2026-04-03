@@ -77,6 +77,46 @@ private fun StepDto.toEntity(recipeId: String) =
         instruction = instruction,
     )
 
+// ── DTO → Domain ─────────────────────────────────────────────────────────────
+
+fun RecipeDto.toDomain(): Recipe =
+    Recipe(
+        id = id,
+        originType = originType.toOriginType(),
+        title = title,
+        yieldAmount = yieldAmount,
+        yieldUnit = yieldUnit,
+        prepTime = prepTime,
+        cookTime = cookTime,
+        totalTime = totalTime,
+        source = source,
+        tags = tags,
+        images = images.sortedBy { it.position }.map { it.toDomainFromDto() },
+        ingredients = ingredients.sortedBy { it.position }.map { it.toDomainFromDto() },
+        steps = steps.sortedBy { it.position }.map { it.toDomainFromDto() },
+        personalRating = personalRating,
+        personalNote = personalNote,
+        isFavorited = isFavorited,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+    )
+
+private fun RecipeImageDto.toDomainFromDto() =
+    RecipeImage(id = id, blobPath = blobPath, url = url, position = position)
+
+private fun IngredientDto.toDomainFromDto() =
+    Ingredient(
+        id = id,
+        position = position,
+        quantity = quantity,
+        unit = unit,
+        name = name,
+        prepNote = prepNote,
+    )
+
+private fun StepDto.toDomainFromDto() =
+    Step(id = id, position = position, instruction = instruction)
+
 // ── Entity → Domain ───────────────────────────────────────────────────────────
 
 fun RecipeWithDetails.toDomain(): Recipe =

@@ -2,11 +2,12 @@ package com.bluelampcreative.chompsquad.feature.camera
 
 import android.net.Uri
 import com.bluelampcreative.chompsquad.core.CoreViewModel
+import com.bluelampcreative.chompsquad.data.scanner.ScanSessionRepository
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
 import org.koin.core.annotation.KoinViewModel
 
 @KoinViewModel
-class CameraViewModel :
+class CameraViewModel(private val scanSessionRepository: ScanSessionRepository) :
     CoreViewModel<CameraViewState, CameraAction, CameraUiEvent>(CameraViewState()) {
 
   override fun reducer(state: CameraViewState, action: CameraAction): CameraViewState =
@@ -52,11 +53,13 @@ class CameraViewModel :
           state.dispatch(CameraAction.PermissionUpdated(event.granted, event.permanentlyDenied))
       is CameraUiEvent.OnImagesSelected -> state.dispatch(CameraAction.ImagesSelected(event.uris))
       is CameraUiEvent.OnImageRemoved -> state.dispatch(CameraAction.ImageRemoved(event.index))
-      CameraUiEvent.OnFlipCamera -> state.dispatch(CameraAction.CameraFlipped)
-      CameraUiEvent.OnToggleFlash -> state.dispatch(CameraAction.FlashToggled)
-      // TODO(task 2.3): store images in ScanSessionRepository and navigate to ScanSubmission
-      CameraUiEvent.OnNext -> navigate(NavEvent.GoBack)
-      CameraUiEvent.OnClose -> navigate(NavEvent.GoBack)
+      is CameraUiEvent.OnFlipCamera -> state.dispatch(CameraAction.CameraFlipped)
+      is CameraUiEvent.OnToggleFlash -> state.dispatch(CameraAction.FlashToggled)
+      is CameraUiEvent.OnNext -> {
+        scanSessionRepository.setPendingImages(state.value.capturedImages.toList())
+        navigate(NavEvent.NavigateToScanSubmission)
+      }
+      is CameraUiEvent.OnClose -> navigate(NavEvent.GoBack)
     }
   }
 
