@@ -1,9 +1,12 @@
 package com.bluelampcreative.chompsquad.feature.scan
 
+import androidx.lifecycle.viewModelScope
 import com.bluelampcreative.chompsquad.core.CoreViewModel
 import com.bluelampcreative.chompsquad.data.scanner.ScanSessionRepository
 import com.bluelampcreative.chompsquad.domain.model.Recipe
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
 
 @KoinViewModel
@@ -19,6 +22,13 @@ class ScanResultViewModel(
       // No result in session — navigate back (handles process death or unexpected entry).
       navigate(NavEvent.GoBack)
     }
+
+    // Collect ingredient edits written back by IngredientEditorViewModel on Done.
+    viewModelScope.launch {
+      scanSessionRepository.ingredientEdits.filterNotNull().collect { ingredients ->
+        state.dispatch(ScanResultAction.IngredientsUpdated(ingredients))
+      }
+    }
   }
 
   override fun reducer(
@@ -27,6 +37,7 @@ class ScanResultViewModel(
   ): ScanResultViewState =
       when (action) {
         is ScanResultAction.RecipeLoaded -> action.recipe.toViewState()
+        is ScanResultAction.IngredientsUpdated -> state.copy(ingredients = action.ingredients)
         is ScanResultAction.TitleChanged -> state.copy(title = action.value)
         is ScanResultAction.YieldAmountChanged -> state.copy(yieldAmount = action.value)
         is ScanResultAction.YieldUnitChanged -> state.copy(yieldUnit = action.value)
@@ -55,8 +66,10 @@ class ScanResultViewModel(
           state.dispatch(ScanResultAction.SourceChanged(event.value))
       is ScanResultUiEvent.OnTagsChanged ->
           state.dispatch(ScanResultAction.TagsChanged(event.value))
-      // TODO(task 2.5): navigate to ingredient list editor
-      ScanResultUiEvent.OnEditIngredients -> Unit
+      ScanResultUiEvent.OnEditIngredients -> {
+        scanSessionRepository.setIngredientEdits(state.value.ingredients)
+        navigate(NavEvent.NavigateToIngredientEditor)
+      }
       // TODO(task 2.6): navigate to steps editor
       ScanResultUiEvent.OnEditSteps -> Unit
       // TODO(task 2.7): POST recipe to /v1/recipes before navigating; clear session on success

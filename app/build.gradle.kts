@@ -214,6 +214,9 @@ dependencies {
   implementation(libs.coil.compose)
   implementation(libs.coil.network.ktor)
 
+  // ── Drag-to-reorder ──────────────────────────────────────────────────────
+  implementation(libs.reorderable)
+
   // ── CameraX ──────────────────────────────────────────────────────────────
   implementation(libs.bundles.camerax)
 

@@ -52,4 +52,7 @@ sealed interface AppRoute : NavKey {
 
   /** Scan result review screen — extracted recipe editing before save. Task 2.4. */
   @Serializable data object ScanResult : AppRoute
+
+  /** Ingredient list editor — add, remove, reorder. Task 2.5. */
+  @Serializable data object IngredientEditor : AppRoute
 }
