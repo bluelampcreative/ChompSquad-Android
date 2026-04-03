@@ -56,7 +56,7 @@ class CameraViewModel(private val scanSessionRepository: ScanSessionRepository) 
       is CameraUiEvent.OnFlipCamera -> state.dispatch(CameraAction.CameraFlipped)
       is CameraUiEvent.OnToggleFlash -> state.dispatch(CameraAction.FlashToggled)
       is CameraUiEvent.OnNext -> {
-        scanSessionRepository.setPendingImages(state.value.capturedImages)
+        scanSessionRepository.setPendingImages(state.value.capturedImages.toList())
         navigate(NavEvent.NavigateToScanSubmission)
       }
       is CameraUiEvent.OnClose -> navigate(NavEvent.GoBack)

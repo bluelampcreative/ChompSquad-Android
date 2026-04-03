@@ -38,7 +38,11 @@ class ScanApi(private val client: HttpClient) {
                     )
                   }
                 },
-        )
+        ) {
+          // defaultRequest sets Content-Type: application/json globally. Remove it here so
+          // MultiPartFormDataContent can set the correct multipart/form-data; boundary=… header.
+          headers.remove(HttpHeaders.ContentType)
+        }
         .body()
   }
 }

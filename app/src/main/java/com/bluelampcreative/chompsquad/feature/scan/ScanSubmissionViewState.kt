@@ -3,7 +3,6 @@ package com.bluelampcreative.chompsquad.feature.scan
 import com.bluelampcreative.chompsquad.core.ViewAction
 
 data class ScanSubmissionViewState(
-    val isSubmitting: Boolean = true,
     val pageMessage: String = "",
     val error: String? = null,
 )

@@ -29,10 +29,10 @@ class DefaultScanSessionRepository : ScanSessionRepository {
   @Volatile private var scanResult: Recipe? = null
 
   override fun setPendingImages(uris: List<Uri>) {
-    pendingImages = uris
+    pendingImages = uris.toList()
   }
 
-  override fun getPendingImages(): List<Uri> = pendingImages
+  override fun getPendingImages(): List<Uri> = pendingImages.toList()
 
   override fun setScanResult(recipe: Recipe) {
     scanResult = recipe
