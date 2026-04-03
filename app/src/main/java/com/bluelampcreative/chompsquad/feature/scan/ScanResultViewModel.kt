@@ -59,9 +59,15 @@ class ScanResultViewModel(
       ScanResultUiEvent.OnEditIngredients -> Unit
       // TODO(task 2.6): navigate to steps editor
       ScanResultUiEvent.OnEditSteps -> Unit
-      // TODO(task 2.7): POST to /v1/recipes before navigating
-      ScanResultUiEvent.OnSave -> navigate(NavEvent.NavigateToMain)
-      ScanResultUiEvent.OnClose -> navigate(NavEvent.GoBack)
+      // TODO(task 2.7): POST recipe to /v1/recipes before navigating; clear session on success
+      ScanResultUiEvent.OnSave -> {
+        scanSessionRepository.clear()
+        navigate(NavEvent.NavigateToMain)
+      }
+      ScanResultUiEvent.OnClose -> {
+        scanSessionRepository.clear()
+        navigate(NavEvent.GoBack)
+      }
     }
   }
 }

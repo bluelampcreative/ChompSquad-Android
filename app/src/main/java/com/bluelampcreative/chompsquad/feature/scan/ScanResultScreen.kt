@@ -76,7 +76,8 @@ fun ScanResultScreen(
           ExtendedFloatingActionButton(
               onClick = { viewModel.handleEvent(ScanResultUiEvent.OnSave) },
               icon = { Icon(Icons.Default.Check, contentDescription = null) },
-              text = { Text("Save Recipe") },
+              // Labeled "Continue" until task 2.7 implements the actual POST to /v1/recipes.
+              text = { Text("Continue") },
               containerColor = MaterialTheme.colorScheme.primary,
               contentColor = MaterialTheme.colorScheme.onPrimary,
           )
@@ -132,7 +133,8 @@ private fun ScanResultContent(
                 onValueChange = { onEvent(ScanResultUiEvent.OnYieldAmountChanged(it)) },
                 label = "Yield",
                 modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                // Text keyboard supports fractions/mixed numbers (e.g. "1/2", "2 1/4").
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
             )
             RecipeTextField(
                 value = viewState.yieldUnit,
