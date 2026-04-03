@@ -18,6 +18,7 @@ import androidx.navigation3.ui.NavDisplay
 import com.bluelampcreative.chompsquad.data.local.TokenRepository
 import com.bluelampcreative.chompsquad.data.remote.AuthEventBus
 import com.bluelampcreative.chompsquad.feature.camera.CameraScreen
+import com.bluelampcreative.chompsquad.feature.main.MainShellScreen
 import com.bluelampcreative.chompsquad.feature.onboarding.OnboardingScreen
 import com.bluelampcreative.chompsquad.feature.paywall.PaywallScreen
 import com.bluelampcreative.chompsquad.feature.profile.ProfileScreen
@@ -72,10 +73,7 @@ fun ChompSquadApp() {
             }
             entry<AppRoute.SignIn> { SignInScreen(onNavEvent = { backStack.handleNavEvent(it) }) }
             entry<AppRoute.SignUp> { SignUpScreen(onNavEvent = { backStack.handleNavEvent(it) }) }
-            entry<AppRoute.Main> {
-              // TODO(task 3.8): implement bottom-nav shell
-              ProfileScreen(onNavEvent = { backStack.handleNavEvent(it) })
-            }
+            entry<AppRoute.Main> { MainShellScreen(onNavEvent = { backStack.handleNavEvent(it) }) }
             entry<AppRoute.Profile> { ProfileScreen(onNavEvent = { backStack.handleNavEvent(it) }) }
             entry<AppRoute.Settings> {
               SettingsScreen(onNavEvent = { backStack.handleNavEvent(it) })
