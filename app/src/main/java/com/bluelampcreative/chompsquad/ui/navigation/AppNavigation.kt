@@ -21,6 +21,7 @@ import com.bluelampcreative.chompsquad.feature.camera.CameraScreen
 import com.bluelampcreative.chompsquad.feature.onboarding.OnboardingScreen
 import com.bluelampcreative.chompsquad.feature.paywall.PaywallScreen
 import com.bluelampcreative.chompsquad.feature.profile.ProfileScreen
+import com.bluelampcreative.chompsquad.feature.scan.IngredientEditorScreen
 import com.bluelampcreative.chompsquad.feature.scan.ScanResultScreen
 import com.bluelampcreative.chompsquad.feature.scan.ScanSubmissionScreen
 import com.bluelampcreative.chompsquad.feature.settings.SettingsScreen
@@ -92,6 +93,9 @@ fun ChompSquadApp() {
             entry<AppRoute.ScanResult> {
               ScanResultScreen(onNavEvent = { backStack.handleNavEvent(it) })
             }
+            entry<AppRoute.IngredientEditor> {
+              IngredientEditorScreen(onNavEvent = { backStack.handleNavEvent(it) })
+            }
           },
   )
 }
@@ -140,5 +144,6 @@ private fun NavBackStack<NavKey>.handleNavEvent(event: NavEvent) {
       removeLastOrNull() // pop ScanSubmission so back doesn't return to the loading screen
       this += AppRoute.ScanResult
     }
+    NavEvent.NavigateToIngredientEditor -> this += AppRoute.IngredientEditor
   }
 }

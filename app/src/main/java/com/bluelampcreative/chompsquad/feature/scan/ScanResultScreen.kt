@@ -45,7 +45,10 @@ import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
 import com.bluelampcreative.chompsquad.ui.theme.ChompSpacing
 import org.koin.androidx.compose.koinViewModel
 
-@Suppress("ModifierMissing") // Root navigation composable — no modifier parameter needed
+@Suppress(
+    "ModifierMissing",
+    "ComposeModifierMissing",
+) // Root navigation composable — no modifier parameter needed
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScanResultScreen(

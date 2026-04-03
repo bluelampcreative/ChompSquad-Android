@@ -34,4 +34,7 @@ sealed interface NavEvent {
 
   /** Replace the Scan Submission screen with the Scan Result screen (task 2.4). */
   data object NavigateToScanResult : NavEvent
+
+  /** Push the Ingredient Editor screen (task 2.5). */
+  data object NavigateToIngredientEditor : NavEvent
 }

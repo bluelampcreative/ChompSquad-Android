@@ -24,6 +24,8 @@ data class ScanResultViewState(
 sealed interface ScanResultAction : ViewAction {
   data class RecipeLoaded(val recipe: Recipe) : ScanResultAction
 
+  data class IngredientsUpdated(val ingredients: List<Ingredient>) : ScanResultAction
+
   data class TitleChanged(val value: String) : ScanResultAction
 
   data class YieldAmountChanged(val value: String) : ScanResultAction
