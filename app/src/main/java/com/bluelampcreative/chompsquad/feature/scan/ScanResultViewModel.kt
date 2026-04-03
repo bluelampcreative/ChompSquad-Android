@@ -2,8 +2,14 @@ package com.bluelampcreative.chompsquad.feature.scan
 
 import androidx.lifecycle.viewModelScope
 import com.bluelampcreative.chompsquad.core.CoreViewModel
+import com.bluelampcreative.chompsquad.data.remote.RecipeRepository
+import com.bluelampcreative.chompsquad.data.remote.dto.CreateRecipeRequestDto
+import com.bluelampcreative.chompsquad.data.remote.dto.IngredientDto
+import com.bluelampcreative.chompsquad.data.remote.dto.StepDto
 import com.bluelampcreative.chompsquad.data.scanner.ScanSessionRepository
+import com.bluelampcreative.chompsquad.domain.model.Ingredient
 import com.bluelampcreative.chompsquad.domain.model.Recipe
+import com.bluelampcreative.chompsquad.domain.model.Step
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filterNotNull
@@ -13,6 +19,7 @@ import org.koin.core.annotation.KoinViewModel
 @KoinViewModel
 class ScanResultViewModel(
     private val scanSessionRepository: ScanSessionRepository,
+    private val recipeRepository: RecipeRepository,
 ) : CoreViewModel<ScanResultViewState, ScanResultAction, ScanResultUiEvent>(ScanResultViewState()) {
 
   init {
@@ -39,14 +46,13 @@ class ScanResultViewModel(
     }
   }
 
-  override fun reducer(
+  // Field-change actions map 1-to-1 from view state field → action value. Extracted here so
+  // reducer() stays under the Detekt CyclomaticComplexMethod threshold.
+  private fun applyFieldChange(
       state: ScanResultViewState,
       action: ScanResultAction,
-  ): ScanResultViewState =
+  ): ScanResultViewState? =
       when (action) {
-        is ScanResultAction.RecipeLoaded -> action.recipe.toViewState()
-        is ScanResultAction.IngredientsUpdated -> state.copy(ingredients = action.ingredients)
-        is ScanResultAction.StepsUpdated -> state.copy(steps = action.steps)
         is ScanResultAction.TitleChanged -> state.copy(title = action.value)
         is ScanResultAction.YieldAmountChanged -> state.copy(yieldAmount = action.value)
         is ScanResultAction.YieldUnitChanged -> state.copy(yieldUnit = action.value)
@@ -55,7 +61,26 @@ class ScanResultViewModel(
         is ScanResultAction.TotalTimeChanged -> state.copy(totalTime = action.value)
         is ScanResultAction.SourceChanged -> state.copy(source = action.value)
         is ScanResultAction.TagsChanged -> state.copy(tags = action.value)
+        else -> null
       }
+
+  override fun reducer(
+      state: ScanResultViewState,
+      action: ScanResultAction,
+  ): ScanResultViewState {
+    applyFieldChange(state, action)?.let {
+      return it
+    }
+    return when (action) {
+      is ScanResultAction.RecipeLoaded -> action.recipe.toViewState()
+      is ScanResultAction.IngredientsUpdated -> state.copy(ingredients = action.ingredients)
+      is ScanResultAction.StepsUpdated -> state.copy(steps = action.steps)
+      ScanResultAction.SaveStarted -> state.copy(isSaving = true, saveError = null)
+      ScanResultAction.SaveSucceeded -> state.copy(isSaving = false, saveSuccess = true)
+      is ScanResultAction.SaveFailed -> state.copy(isSaving = false, saveError = action.message)
+      else -> state
+    }
+  }
 
   override fun handleEvent(event: ScanResultUiEvent) {
     when (event) {
@@ -83,8 +108,8 @@ class ScanResultViewModel(
         scanSessionRepository.setStepEdits(state.value.steps)
         navigate(NavEvent.NavigateToStepEditor)
       }
-      // TODO(task 2.7): POST recipe to /v1/recipes before navigating; clear session on success
-      ScanResultUiEvent.OnSave -> {
+      ScanResultUiEvent.OnSave -> handleSave()
+      ScanResultUiEvent.OnNavigateAfterSave -> {
         scanSessionRepository.clear()
         navigate(NavEvent.NavigateToMain)
       }
@@ -92,6 +117,19 @@ class ScanResultViewModel(
         scanSessionRepository.clear()
         navigate(NavEvent.GoBack)
       }
+    }
+  }
+
+  private fun handleSave() {
+    val current = state.value
+    state.dispatch(ScanResultAction.SaveStarted)
+    viewModelScope.launch {
+      recipeRepository
+          .saveRecipe(current.toRequestDto())
+          .onSuccess { state.dispatch(ScanResultAction.SaveSucceeded) }
+          .onFailure { error ->
+            state.dispatch(ScanResultAction.SaveFailed(error.message ?: "Save failed"))
+          }
     }
   }
 }
@@ -111,3 +149,32 @@ private fun Recipe.toViewState(): ScanResultViewState =
         ingredients = ingredients,
         steps = steps,
     )
+
+private fun ScanResultViewState.toRequestDto(): CreateRecipeRequestDto =
+    CreateRecipeRequestDto(
+        title = title,
+        originType = "scanned",
+        yieldAmount = yieldAmount.trimToNull(),
+        yieldUnit = yieldUnit.trimToNull(),
+        prepTime = prepTime.toIntOrNull(),
+        cookTime = cookTime.toIntOrNull(),
+        source = source.trimToNull(),
+        tags = tags.split(",").map { it.trim() }.filter { it.isNotBlank() },
+        ingredients = ingredients.mapIndexed { index, ingredient -> ingredient.toDto(index + 1) },
+        steps = steps.mapIndexed { index, step -> step.toDto(index + 1) },
+    )
+
+private fun String.trimToNull(): String? = trim().ifBlank { null }
+
+private fun Ingredient.toDto(position: Int): IngredientDto =
+    IngredientDto(
+        id = id,
+        position = position,
+        quantity = quantity,
+        unit = unit,
+        name = name,
+        prepNote = prepNote,
+    )
+
+private fun Step.toDto(position: Int): StepDto =
+    StepDto(id = id, position = position, instruction = instruction)
