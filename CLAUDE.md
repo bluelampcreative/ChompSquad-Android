@@ -48,6 +48,21 @@ state via a `Channel`-backed running fold — dispatch actions, never mutate sta
 - **UI events** (UI → VM): implement `handleEvent(event: UIEventType)` from `UIEventHandler`
   for button-press style interactions when needed.
 
+## Hardware callback pattern
+
+Device subsystem callbacks (CameraX, Bluetooth, Audio, Sensors, etc.) call ViewModel
+methods directly rather than routing through `handleEvent`. Rationale: these are
+latency-sensitive, often arrive on non-main threads, and represent completed hardware
+events — not user intent. `handleEvent` is reserved for user-initiated UI interactions.
+
+Rules for hardware callback methods:
+- **Named in past tense** to signal a completed hardware event: `onImageCaptured`,
+  `onCaptureFailed`, `onGattCharacteristicRead`
+- **Dispatch only** — call `state.dispatch(action)` and nothing else. No async work,
+  no `viewModelScope.launch`.
+- **Declared `public`** — called directly from the composable's hardware listener.
+- **One method per hardware outcome** — don't multiplex unrelated events into one call.
+
 ## Gradle conventions
 
 - `ksp {}` block goes at **top level** in `app/build.gradle.kts`, not inside `android {}`.
