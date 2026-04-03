@@ -11,9 +11,11 @@ import org.koin.core.annotation.Singleton
  * In-memory store that bridges the Camera capture screen (which sets the images to scan) and the
  * Scan Submission screen (which sets the resulting [Recipe] after the upload succeeds).
  *
- * [ingredientEdits] carries the working ingredient list while the ingredient editor (task 2.5) is
- * open. Null means no edit is in progress. [ScanResultViewModel] collects non-null emissions to
- * reflect changes back on the review screen.
+ * [ingredientEdits] carries the ingredient list for the ingredient editor (task 2.5). Null means
+ * the editor has never been opened, or was dismissed via [clearIngredientEdits]. A non-null value
+ * means either the editor is open with the current list, or the user confirmed edits and the result
+ * is ready to be reflected. [ScanResultViewModel] collects non-null emissions to keep the review
+ * screen in sync.
  *
  * Scoped as a singleton so all screens in the scan flow share the same instance without persisting
  * anything to disk. Call [clear] when the scan flow is fully complete.
@@ -30,6 +32,9 @@ interface ScanSessionRepository {
   fun getScanResult(): Recipe?
 
   fun setIngredientEdits(ingredients: List<Ingredient>)
+
+  /** Resets [ingredientEdits] to null. Call when the editor is dismissed without saving. */
+  fun clearIngredientEdits()
 
   fun clear()
 }
@@ -56,6 +61,10 @@ class DefaultScanSessionRepository : ScanSessionRepository {
 
   override fun setIngredientEdits(ingredients: List<Ingredient>) {
     _ingredientEdits.value = ingredients.toList()
+  }
+
+  override fun clearIngredientEdits() {
+    _ingredientEdits.value = null
   }
 
   override fun clear() {

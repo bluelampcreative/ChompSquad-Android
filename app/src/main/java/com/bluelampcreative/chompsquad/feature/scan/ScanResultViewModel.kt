@@ -5,6 +5,7 @@ import com.bluelampcreative.chompsquad.core.CoreViewModel
 import com.bluelampcreative.chompsquad.data.scanner.ScanSessionRepository
 import com.bluelampcreative.chompsquad.domain.model.Recipe
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel

@@ -116,18 +116,14 @@ private fun IngredientEditorContent(
         index,
         ingredient ->
       ReorderableItem(reorderState, key = ingredient.id) {
+        // draggableHandle() is a ReorderableItemScope member extension — must be called
+        // here so the scope is in scope, then passed as a plain Modifier to IngredientRow.
         IngredientRow(
             ingredient = ingredient,
             onEvent = onEvent,
-            dragHandle = {
-              Icon(
-                  imageVector = Icons.Default.Menu,
-                  contentDescription = "Drag to reorder",
-                  modifier = Modifier.draggableHandle().size(24.dp).padding(end = ChompSpacing.xs),
-                  tint = MaterialTheme.colorScheme.onSurfaceVariant,
-              )
-            },
             modifier = Modifier.padding(vertical = ChompSpacing.xs / 2),
+            dragHandleModifier =
+                Modifier.draggableHandle().size(24.dp).padding(end = ChompSpacing.xs),
         )
       }
       if (index < viewState.ingredients.lastIndex) {
@@ -154,8 +150,8 @@ private fun IngredientEditorContent(
 private fun IngredientRow(
     ingredient: EditableIngredient,
     onEvent: (IngredientEditorUiEvent) -> Unit,
-    dragHandle: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    dragHandleModifier: Modifier = Modifier,
 ) {
   ElevatedCard(
       modifier = modifier.fillMaxWidth().heightIn(min = 48.dp),
@@ -167,7 +163,12 @@ private fun IngredientRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(ChompSpacing.xs),
     ) {
-      dragHandle()
+      Icon(
+          imageVector = Icons.Default.Menu,
+          contentDescription = "Drag to reorder",
+          modifier = dragHandleModifier,
+          tint = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
 
       Column(
           modifier = Modifier.weight(1f),

@@ -98,7 +98,10 @@ class IngredientEditorViewModel(
         scanSessionRepository.setIngredientEdits(updated)
         navigate(NavEvent.GoBack)
       }
-      IngredientEditorUiEvent.OnClose -> navigate(NavEvent.GoBack)
+      IngredientEditorUiEvent.OnClose -> {
+        scanSessionRepository.clearIngredientEdits()
+        navigate(NavEvent.GoBack)
+      }
     }
   }
 }
