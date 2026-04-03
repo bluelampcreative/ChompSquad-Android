@@ -11,6 +11,7 @@ import com.bluelampcreative.chompsquad.domain.model.Ingredient
 import com.bluelampcreative.chompsquad.domain.model.Recipe
 import com.bluelampcreative.chompsquad.domain.model.Step
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
@@ -21,6 +22,10 @@ class ScanResultViewModel(
     private val scanSessionRepository: ScanSessionRepository,
     private val recipeRepository: RecipeRepository,
 ) : CoreViewModel<ScanResultViewState, ScanResultAction, ScanResultUiEvent>(ScanResultViewState()) {
+
+  // Guards against duplicate POSTs from rapid taps before isSaving propagates through the
+  // StateReducer channel. Checked and set synchronously before the coroutine is launched.
+  private val isSaveInFlight = AtomicBoolean(false)
 
   init {
     val recipe = scanSessionRepository.getScanResult()
@@ -121,6 +126,7 @@ class ScanResultViewModel(
   }
 
   private fun handleSave() {
+    if (!isSaveInFlight.compareAndSet(false, true)) return
     val current = state.value
     state.dispatch(ScanResultAction.SaveStarted)
     viewModelScope.launch {
@@ -128,6 +134,7 @@ class ScanResultViewModel(
           .saveRecipe(current.toRequestDto())
           .onSuccess { state.dispatch(ScanResultAction.SaveSucceeded) }
           .onFailure { error ->
+            isSaveInFlight.set(false)
             state.dispatch(ScanResultAction.SaveFailed(error.message ?: "Save failed"))
           }
     }
@@ -156,8 +163,8 @@ private fun ScanResultViewState.toRequestDto(): CreateRecipeRequestDto =
         originType = "scanned",
         yieldAmount = yieldAmount.trimToNull(),
         yieldUnit = yieldUnit.trimToNull(),
-        prepTime = prepTime.toIntOrNull(),
-        cookTime = cookTime.toIntOrNull(),
+        prepTime = prepTime.trim().toIntOrNull(),
+        cookTime = cookTime.trim().toIntOrNull(),
         source = source.trimToNull(),
         tags = tags.split(",").map { it.trim() }.filter { it.isNotBlank() },
         ingredients = ingredients.mapIndexed { index, ingredient -> ingredient.toDto(index + 1) },

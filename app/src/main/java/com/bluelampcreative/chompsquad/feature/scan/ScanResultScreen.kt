@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
@@ -126,7 +127,7 @@ fun ScanResultScreen(
               icon = {
                 if (viewState.isSaving) {
                   CircularProgressIndicator(
-                      modifier = Modifier.width(24.dp),
+                      modifier = Modifier.size(24.dp),
                       color = MaterialTheme.colorScheme.onPrimary,
                       strokeWidth = 2.dp,
                   )
