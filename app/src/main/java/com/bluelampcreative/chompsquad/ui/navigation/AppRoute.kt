@@ -55,4 +55,7 @@ sealed interface AppRoute : NavKey {
 
   /** Ingredient list editor — add, remove, reorder. Task 2.5. */
   @Serializable data object IngredientEditor : AppRoute
+
+  /** Step list editor — add, remove, reorder. Task 2.6. */
+  @Serializable data object StepEditor : AppRoute
 }
