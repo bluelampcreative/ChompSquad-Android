@@ -25,6 +25,7 @@ import com.bluelampcreative.chompsquad.feature.profile.ProfileScreen
 import com.bluelampcreative.chompsquad.feature.scan.IngredientEditorScreen
 import com.bluelampcreative.chompsquad.feature.scan.ScanResultScreen
 import com.bluelampcreative.chompsquad.feature.scan.ScanSubmissionScreen
+import com.bluelampcreative.chompsquad.feature.scan.StepEditorScreen
 import com.bluelampcreative.chompsquad.feature.settings.SettingsScreen
 import com.bluelampcreative.chompsquad.feature.signin.SignInScreen
 import com.bluelampcreative.chompsquad.feature.signup.SignUpScreen
@@ -94,6 +95,9 @@ fun ChompSquadApp() {
             entry<AppRoute.IngredientEditor> {
               IngredientEditorScreen(onNavEvent = { backStack.handleNavEvent(it) })
             }
+            entry<AppRoute.StepEditor> {
+              StepEditorScreen(onNavEvent = { backStack.handleNavEvent(it) })
+            }
           },
   )
 }
@@ -143,5 +147,6 @@ private fun NavBackStack<NavKey>.handleNavEvent(event: NavEvent) {
       this += AppRoute.ScanResult
     }
     NavEvent.NavigateToIngredientEditor -> this += AppRoute.IngredientEditor
+    NavEvent.NavigateToStepEditor -> this += AppRoute.StepEditor
   }
 }

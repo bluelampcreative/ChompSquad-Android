@@ -30,6 +30,13 @@ class ScanResultViewModel(
         state.dispatch(ScanResultAction.IngredientsUpdated(ingredients))
       }
     }
+
+    // Collect step edits written back by StepEditorViewModel on Done.
+    viewModelScope.launch {
+      scanSessionRepository.stepEdits.filterNotNull().collect { steps ->
+        state.dispatch(ScanResultAction.StepsUpdated(steps))
+      }
+    }
   }
 
   override fun reducer(
@@ -39,6 +46,7 @@ class ScanResultViewModel(
       when (action) {
         is ScanResultAction.RecipeLoaded -> action.recipe.toViewState()
         is ScanResultAction.IngredientsUpdated -> state.copy(ingredients = action.ingredients)
+        is ScanResultAction.StepsUpdated -> state.copy(steps = action.steps)
         is ScanResultAction.TitleChanged -> state.copy(title = action.value)
         is ScanResultAction.YieldAmountChanged -> state.copy(yieldAmount = action.value)
         is ScanResultAction.YieldUnitChanged -> state.copy(yieldUnit = action.value)
@@ -71,8 +79,10 @@ class ScanResultViewModel(
         scanSessionRepository.setIngredientEdits(state.value.ingredients)
         navigate(NavEvent.NavigateToIngredientEditor)
       }
-      // TODO(task 2.6): navigate to steps editor
-      ScanResultUiEvent.OnEditSteps -> Unit
+      ScanResultUiEvent.OnEditSteps -> {
+        scanSessionRepository.setStepEdits(state.value.steps)
+        navigate(NavEvent.NavigateToStepEditor)
+      }
       // TODO(task 2.7): POST recipe to /v1/recipes before navigating; clear session on success
       ScanResultUiEvent.OnSave -> {
         scanSessionRepository.clear()

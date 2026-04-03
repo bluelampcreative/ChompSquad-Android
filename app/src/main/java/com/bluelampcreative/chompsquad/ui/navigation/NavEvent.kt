@@ -37,4 +37,7 @@ sealed interface NavEvent {
 
   /** Push the Ingredient Editor screen (task 2.5). */
   data object NavigateToIngredientEditor : NavEvent
+
+  /** Push the Step Editor screen (task 2.6). */
+  data object NavigateToStepEditor : NavEvent
 }

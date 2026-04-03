@@ -26,6 +26,8 @@ sealed interface ScanResultAction : ViewAction {
 
   data class IngredientsUpdated(val ingredients: List<Ingredient>) : ScanResultAction
 
+  data class StepsUpdated(val steps: List<Step>) : ScanResultAction
+
   data class TitleChanged(val value: String) : ScanResultAction
 
   data class YieldAmountChanged(val value: String) : ScanResultAction
