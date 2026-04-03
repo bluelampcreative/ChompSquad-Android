@@ -44,4 +44,12 @@ sealed interface AppRoute : NavKey {
 
   /** Camera capture screen — up to 5 pages via CameraX or Photo Picker. Task 2.1. */
   @Serializable data object CameraCapture : AppRoute
+
+  /**
+   * Scan submission loading screen — preprocesses images and POSTs to the scan endpoint. Task 2.3.
+   */
+  @Serializable data object ScanSubmission : AppRoute
+
+  /** Scan result review screen — extracted recipe editing before save. Task 2.4. */
+  @Serializable data object ScanResult : AppRoute
 }

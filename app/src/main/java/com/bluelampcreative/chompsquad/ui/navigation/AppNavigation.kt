@@ -21,6 +21,7 @@ import com.bluelampcreative.chompsquad.feature.camera.CameraScreen
 import com.bluelampcreative.chompsquad.feature.onboarding.OnboardingScreen
 import com.bluelampcreative.chompsquad.feature.paywall.PaywallScreen
 import com.bluelampcreative.chompsquad.feature.profile.ProfileScreen
+import com.bluelampcreative.chompsquad.feature.scan.ScanSubmissionScreen
 import com.bluelampcreative.chompsquad.feature.settings.SettingsScreen
 import com.bluelampcreative.chompsquad.feature.signin.SignInScreen
 import com.bluelampcreative.chompsquad.feature.signup.SignUpScreen
@@ -84,6 +85,13 @@ fun ChompSquadApp() {
             entry<AppRoute.CameraCapture> {
               CameraScreen(onNavEvent = { backStack.handleNavEvent(it) })
             }
+            entry<AppRoute.ScanSubmission> {
+              ScanSubmissionScreen(onNavEvent = { backStack.handleNavEvent(it) })
+            }
+            entry<AppRoute.ScanResult> {
+              // TODO(task 2.4): implement scan result review screen
+              AuthPlaceholderScreen(label = "Scan Result")
+            }
           },
   )
 }
@@ -127,5 +135,10 @@ private fun NavBackStack<NavKey>.handleNavEvent(event: NavEvent) {
       this += AppRoute.SignIn
     }
     NavEvent.NavigateToCameraCapture -> this += AppRoute.CameraCapture
+    NavEvent.NavigateToScanSubmission -> this += AppRoute.ScanSubmission
+    NavEvent.NavigateToScanResult -> {
+      removeLastOrNull() // pop ScanSubmission so back doesn't return to the loading screen
+      this += AppRoute.ScanResult
+    }
   }
 }
