@@ -64,7 +64,7 @@ class CatalogViewModel(
         is CatalogAction.SearchQueryChanged -> state.copy(searchQuery = action.query)
         is CatalogAction.TagSelected -> state.copy(selectedTag = action.tag)
         CatalogAction.ViewToggled -> state.copy(isGridView = !state.isGridView)
-        CatalogAction.SyncStarted -> state.copy(syncError = null)
+        CatalogAction.SyncStarted -> state.copy(syncError = null, isLoading = true)
         CatalogAction.SyncCompleted -> state.copy(isLoading = false)
         is CatalogAction.SyncFailed -> state.copy(syncError = action.message, isLoading = false)
       }

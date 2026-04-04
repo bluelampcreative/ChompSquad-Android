@@ -76,10 +76,9 @@ class DefaultRecipeRepository(
       search: String?,
   ): Result<Unit> =
       recipeApi.getRecipes(page, pageSize, tag, search).mapCatching { response ->
-        response.items.forEach { item ->
-          recipeDao.insertRecipeIfAbsent(item.toMinimalEntity())
-          item.toHeroImageEntity()?.let { recipeDao.insertImageIfAbsent(it) }
-        }
+        val recipes = response.items.map { it.toMinimalEntity() }
+        val images = response.items.mapNotNull { it.toHeroImageEntity() }
+        recipeDao.insertListStubs(recipes, images)
       }
 
   override suspend fun refreshHeroImageUrl(imageId: String, blobPath: String): Result<Unit> =

@@ -56,9 +56,9 @@ query {
 
 Filter results to only threads where `isResolved` is `false`.
 
-Also filter out any threads where the comment author `__typename` is `Bot` or the login matches known bot accounts (e.g. `github-actions`, `copilot`, `dependabot`, `renovate`). Only address comments left by human reviewers.
+Also filter out any threads where the comment author `__typename` is `Bot` and the login matches known noise bots (e.g. `github-actions`, `dependabot`, `renovate`). **Include** comments from `copilot-pull-request-reviewer` — treat Copilot review comments the same as human reviewer comments.
 
-If there are no unresolved human reviewer threads, inform the user and stop.
+If there are no unresolved threads (from human reviewers or Copilot), inform the user and stop.
 
 ## Step 2 — Analyze Before Acting
 

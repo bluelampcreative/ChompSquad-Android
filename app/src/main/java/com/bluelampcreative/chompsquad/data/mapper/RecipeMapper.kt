@@ -226,9 +226,10 @@ fun RecipeListItemDto.toMinimalEntity(): RecipeEntity =
 
 /**
  * Builds a stub [RecipeImageEntity] for the hero image URL received from the list endpoint. Uses a
- * deterministic ID so subsequent [upsertRecipeWithDetails] calls (on detail fetch) will REPLACE
- * this stub with the real image data. [blobPath] is left blank — image refresh is only possible
- * after the full detail has been fetched and the real blob path is stored.
+ * deterministic ID so the temporary hero stub is predictable while cached from list data; when a
+ * later [upsertRecipeWithDetails] call stores full recipe details, it deletes existing image rows
+ * for the recipe and inserts the real detail images. [blobPath] is left blank — image refresh is
+ * only possible after the full detail has been fetched and the real blob path is stored.
  */
 fun RecipeListItemDto.toHeroImageEntity(): RecipeImageEntity? =
     heroImageUrl?.let { url ->
