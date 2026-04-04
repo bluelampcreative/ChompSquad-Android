@@ -39,6 +39,16 @@ data class RecipeListItem(
     val title: String,
     val tags: List<String>,
     val heroImageUrl: String?,
+    /**
+     * Room image ID for the hero image. Used to update the URL in Room after a 403 refresh. Null
+     * for list-only items that haven't had their detail fetched yet.
+     */
+    val heroImageId: String?,
+    /**
+     * Blob path for the hero image. Required to call `POST /v1/images/refresh-url`. Blank for
+     * list-only stubs where the detail has not been fetched yet — check before calling refresh.
+     */
+    val heroBlobPath: String?,
     val totalTime: Int?,
     val createdAt: String,
 )

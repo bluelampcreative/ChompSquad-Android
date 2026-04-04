@@ -102,6 +102,10 @@ fun ChompSquadApp() {
             entry<AppRoute.ManualEntry> {
               ManualEntryScreen(onNavEvent = { backStack.handleNavEvent(it) })
             }
+            entry<AppRoute.RecipeDetail> { key ->
+              // Full detail screen implemented in task 3.2; placeholder until then.
+              AuthPlaceholderScreen(label = "Recipe ${key.id}")
+            }
           },
   )
 }
@@ -150,6 +154,7 @@ private fun NavBackStack<NavKey>.handleNavEvent(event: NavEvent) {
       removeLastOrNull() // pop ScanSubmission so back doesn't return to the loading screen
       this += AppRoute.ScanResult
     }
+    is NavEvent.NavigateToRecipeDetail -> this += AppRoute.RecipeDetail(event.id)
     else -> Unit // handled above via simplePushRoute
   }
 }

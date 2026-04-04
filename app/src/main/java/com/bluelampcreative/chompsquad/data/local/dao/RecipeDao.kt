@@ -85,6 +85,20 @@ interface RecipeDao {
     upsertSteps(steps)
   }
 
+  /**
+   * Inserts [recipe] only if no row with the same primary key exists. Used when caching minimal
+   * stubs from the list API so that a previously saved full recipe is never downgraded to a stub.
+   */
+  @Insert(onConflict = OnConflictStrategy.IGNORE)
+  suspend fun insertRecipeIfAbsent(recipe: RecipeEntity)
+
+  /**
+   * Inserts [image] only if no row with the same primary key exists. Companion to
+   * [insertRecipeIfAbsent] for caching hero image stubs from list API responses.
+   */
+  @Insert(onConflict = OnConflictStrategy.IGNORE)
+  suspend fun insertImageIfAbsent(image: RecipeImageEntity)
+
   @Update suspend fun updateRecipe(recipe: RecipeEntity)
 
   @Query("DELETE FROM recipes WHERE id = :id") suspend fun deleteById(id: String)
