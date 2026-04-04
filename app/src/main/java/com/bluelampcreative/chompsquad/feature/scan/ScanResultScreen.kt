@@ -1,5 +1,8 @@
 package com.bluelampcreative.chompsquad.feature.scan
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
@@ -26,15 +30,21 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -43,6 +53,7 @@ import com.bluelampcreative.chompsquad.domain.model.Ingredient
 import com.bluelampcreative.chompsquad.domain.model.Step
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
 import com.bluelampcreative.chompsquad.ui.theme.ChompSpacing
+import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 
 @Suppress(
@@ -57,10 +68,41 @@ fun ScanResultScreen(
 ) {
   val viewState by viewModel.viewState.collectAsStateWithLifecycle()
   val currentOnNavEvent by rememberUpdatedState(onNavEvent)
+  val haptic = LocalHapticFeedback.current
+  val snackbarHostState = remember { SnackbarHostState() }
 
   LaunchedEffect(Unit) { viewModel.navEvents.collect { currentOnNavEvent(it) } }
 
+  // Haptic + brief delay before navigating away so the spring animation is visible.
+  LaunchedEffect(viewState.saveSuccess) {
+    if (viewState.saveSuccess) {
+      haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+      delay(SAVE_SUCCESS_DELAY_MS)
+      viewModel.handleEvent(ScanResultUiEvent.OnNavigateAfterSave)
+    }
+  }
+
+  // Show save errors as a transient snackbar.
+  val saveError = viewState.saveError
+  LaunchedEffect(saveError) {
+    if (saveError != null) {
+      snackbarHostState.showSnackbar(saveError)
+    }
+  }
+
+  val fabScale by
+      animateFloatAsState(
+          targetValue = if (viewState.saveSuccess) 1.25f else 1f,
+          animationSpec =
+              spring(
+                  dampingRatio = Spring.DampingRatioLowBouncy,
+                  stiffness = Spring.StiffnessMediumLow,
+              ),
+          label = "fabScale",
+      )
+
   Scaffold(
+      snackbarHost = { SnackbarHost(snackbarHostState) },
       topBar = {
         TopAppBar(
             title = { Text("Review Recipe") },
@@ -77,12 +119,26 @@ fun ScanResultScreen(
       floatingActionButton = {
         if (!viewState.isLoading) {
           ExtendedFloatingActionButton(
-              onClick = { viewModel.handleEvent(ScanResultUiEvent.OnSave) },
-              icon = { Icon(Icons.Default.Check, contentDescription = null) },
-              // Labeled "Continue" until task 2.7 implements the actual POST to /v1/recipes.
-              text = { Text("Continue") },
+              onClick = {
+                if (!viewState.isSaving && !viewState.saveSuccess) {
+                  viewModel.handleEvent(ScanResultUiEvent.OnSave)
+                }
+              },
+              icon = {
+                if (viewState.isSaving) {
+                  CircularProgressIndicator(
+                      modifier = Modifier.size(24.dp),
+                      color = MaterialTheme.colorScheme.onPrimary,
+                      strokeWidth = 2.dp,
+                  )
+                } else {
+                  Icon(Icons.Default.Check, contentDescription = null)
+                }
+              },
+              text = { Text(if (viewState.saveSuccess) "Saved!" else "Save") },
               containerColor = MaterialTheme.colorScheme.primary,
               contentColor = MaterialTheme.colorScheme.onPrimary,
+              modifier = Modifier.scale(fabScale),
           )
         }
       },
@@ -103,6 +159,8 @@ fun ScanResultScreen(
     }
   }
 }
+
+private const val SAVE_SUCCESS_DELAY_MS = 800L
 
 @Composable
 private fun ScanResultContent(
@@ -270,7 +328,6 @@ private fun IngredientsSection(ingredients: List<Ingredient>, onEditClick: () ->
         }
       }
       Spacer(modifier = Modifier.height(ChompSpacing.sm))
-      // TODO(task 2.5): wire OnEditIngredients to the ingredient list editor screen
       Button(onClick = onEditClick, modifier = Modifier.fillMaxWidth()) { Text("Edit Ingredients") }
     }
   }
@@ -288,7 +345,6 @@ private fun StepsSection(steps: List<Step>, onEditClick: () -> Unit) {
         }
       }
       Spacer(modifier = Modifier.height(ChompSpacing.sm))
-      // TODO(task 2.6): wire OnEditSteps to the steps editor screen
       Button(onClick = onEditClick, modifier = Modifier.fillMaxWidth()) { Text("Edit Steps") }
     }
   }

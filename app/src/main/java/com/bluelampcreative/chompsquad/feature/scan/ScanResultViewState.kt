@@ -19,6 +19,10 @@ data class ScanResultViewState(
     val heroImageUrl: String? = null,
     val ingredients: List<Ingredient> = emptyList(),
     val steps: List<Step> = emptyList(),
+    val isSaving: Boolean = false,
+    val saveError: String? = null,
+    /** True after a successful save — triggers haptic + spring animation in the UI. */
+    val saveSuccess: Boolean = false,
 )
 
 sealed interface ScanResultAction : ViewAction {
@@ -43,6 +47,12 @@ sealed interface ScanResultAction : ViewAction {
   data class SourceChanged(val value: String) : ScanResultAction
 
   data class TagsChanged(val value: String) : ScanResultAction
+
+  data object SaveStarted : ScanResultAction
+
+  data object SaveSucceeded : ScanResultAction
+
+  data class SaveFailed(val message: String) : ScanResultAction
 }
 
 sealed interface ScanResultUiEvent {
@@ -69,6 +79,9 @@ sealed interface ScanResultUiEvent {
   data object OnEditSteps : ScanResultUiEvent
 
   data object OnSave : ScanResultUiEvent
+
+  /** Called by the UI after the save-success haptic + animation completes. */
+  data object OnNavigateAfterSave : ScanResultUiEvent
 
   data object OnClose : ScanResultUiEvent
 }
