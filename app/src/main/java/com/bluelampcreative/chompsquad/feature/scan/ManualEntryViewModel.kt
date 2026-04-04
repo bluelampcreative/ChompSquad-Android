@@ -33,6 +33,12 @@ class ManualEntryViewModel(
   private val isSaveInFlight = AtomicBoolean(false)
 
   init {
+    // Clear any leftover edits from a prior scan flow before starting the collectors.
+    // Without this, a non-null StateFlow value from the previous flow would immediately
+    // emit and pre-populate the blank manual-entry form.
+    scanSessionRepository.clearIngredientEdits()
+    scanSessionRepository.clearStepEdits()
+
     // Collect ingredient edits written back by IngredientEditorViewModel on Done.
     viewModelScope.launch {
       scanSessionRepository.ingredientEdits.filterNotNull().collect { ingredients ->
@@ -96,7 +102,11 @@ class ManualEntryViewModel(
         scanSessionRepository.clear()
         navigate(NavEvent.NavigateToMain)
       }
-      ScanResultUiEvent.OnClose -> navigate(NavEvent.GoBack)
+      ScanResultUiEvent.OnClose -> {
+        scanSessionRepository.clearIngredientEdits()
+        scanSessionRepository.clearStepEdits()
+        navigate(NavEvent.GoBack)
+      }
     }
   }
 
