@@ -147,6 +147,8 @@ fun CameraScreen(
   )
 }
 
+private const val SCANS_REMAINING_WARN_THRESHOLD = 3
+
 @Composable
 private fun CameraScreenContent(
     viewState: CameraViewState,
@@ -158,20 +160,26 @@ private fun CameraScreenContent(
     modifier: Modifier = Modifier,
 ) {
   Box(modifier = modifier.fillMaxSize()) {
-    if (!viewState.hasCameraPermission) {
-      PermissionContent(
-          permanentlyDenied = viewState.permissionPermanentlyDenied,
-          onClose = { onHandleEvent(CameraUiEvent.OnClose) },
-          onAction = onPermissionAction,
-      )
-    } else {
-      LiveCameraContent(
-          viewState = viewState,
-          onHandleEvent = onHandleEvent,
-          onCaptureStart = onCaptureStart,
-          onImageCapture = onImageCapture,
-          onCaptureFail = onCaptureFail,
-      )
+    when {
+      !viewState.hasCameraPermission ->
+          PermissionContent(
+              permanentlyDenied = viewState.permissionPermanentlyDenied,
+              onClose = { onHandleEvent(CameraUiEvent.OnClose) },
+              onAction = onPermissionAction,
+          )
+      viewState.isScanCapReached ->
+          ScanCapContent(
+              onUpgrade = { onHandleEvent(CameraUiEvent.OnUpgrade) },
+              onClose = { onHandleEvent(CameraUiEvent.OnClose) },
+          )
+      else ->
+          LiveCameraContent(
+              viewState = viewState,
+              onHandleEvent = onHandleEvent,
+              onCaptureStart = onCaptureStart,
+              onImageCapture = onImageCapture,
+              onCaptureFail = onCaptureFail,
+          )
     }
   }
 }
@@ -189,23 +197,10 @@ private fun LiveCameraContent(
     onCaptureFail: () -> Unit,
 ) {
   val context = LocalContext.current
-  val lifecycleOwner = LocalLifecycleOwner.current
 
   val previewView = remember { PreviewView(context) }
   val imageCapture = remember { ImageCapture.Builder().build() }
-
-  // Photo picker — limited to remaining capacity so the system picker shows the correct max.
-  // key() forces re-registration when remaining slots change (safe: picker is always closed
-  // before the count updates).
-  val remaining = MAX_SCAN_IMAGES - viewState.capturedImages.size
-  val photoPickerLauncher =
-      key(remaining) {
-        rememberLauncherForActivityResult(
-            PickMultipleVisualMedia(maxItems = maxOf(1, remaining))
-        ) { uris ->
-          if (uris.isNotEmpty()) onHandleEvent(CameraUiEvent.OnImagesSelected(uris))
-        }
-      }
+  val lifecycleOwner = LocalLifecycleOwner.current
 
   // Bind/rebind camera when lens facing changes
   LaunchedEffect(viewState.isFrontCamera) {
@@ -243,6 +238,19 @@ private fun LiveCameraContent(
     imageCapture.flashMode = viewState.flashMode.toCameraXFlashMode()
   }
 
+  // Photo picker — limited to remaining capacity so the system picker shows the correct max.
+  // key() forces re-registration when remaining slots change (safe: picker is always closed
+  // before the count updates).
+  val remaining = MAX_SCAN_IMAGES - viewState.capturedImages.size
+  val photoPickerLauncher =
+      key(remaining) {
+        rememberLauncherForActivityResult(
+            PickMultipleVisualMedia(maxItems = maxOf(1, remaining))
+        ) { uris ->
+          if (uris.isNotEmpty()) onHandleEvent(CameraUiEvent.OnImagesSelected(uris))
+        }
+      }
+
   val canCapture = viewState.capturedImages.size < MAX_SCAN_IMAGES && !viewState.isCapturing
   // Immediate in-composable lock prevents concurrent captures from fast double-taps before the
   // reducer's isCapturing flag propagates back through recomposition.
@@ -274,38 +282,13 @@ private fun LiveCameraContent(
   Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
     AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
 
-    // Top controls
-    Row(
-        modifier =
-            Modifier.fillMaxWidth()
-                .align(Alignment.TopStart)
-                .background(Color.Black.copy(alpha = 0.45f))
-                .statusBarsPadding()
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-      IconButton(onClick = { onHandleEvent(CameraUiEvent.OnClose) }) {
-        Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
-      }
-      Spacer(Modifier.weight(1f))
-      if (viewState.capturedImages.isNotEmpty()) {
-        Text(
-            text = "${viewState.capturedImages.size}/$MAX_SCAN_IMAGES",
-            style =
-                MaterialTheme.typography.labelLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                ),
-            modifier = Modifier.padding(horizontal = 8.dp),
-        )
-      }
-      FlashButton(
-          flashMode = viewState.flashMode,
-          onClick = { onHandleEvent(CameraUiEvent.OnToggleFlash) },
-      )
-    }
+    CameraTopBar(
+        viewState = viewState,
+        onClose = { onHandleEvent(CameraUiEvent.OnClose) },
+        onToggleFlash = { onHandleEvent(CameraUiEvent.OnToggleFlash) },
+        modifier = Modifier.align(Alignment.TopStart),
+    )
 
-    // Bottom controls
     CameraBottomBar(
         viewState = viewState,
         canCapture = canCapture,
@@ -316,6 +299,64 @@ private fun LiveCameraContent(
         onHandleEvent = onHandleEvent,
         modifier = Modifier.align(Alignment.BottomCenter),
     )
+  }
+}
+
+@Composable
+private fun CameraTopBar(
+    viewState: CameraViewState,
+    onClose: () -> Unit,
+    onToggleFlash: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+  Row(
+      modifier =
+          modifier
+              .fillMaxWidth()
+              .background(Color.Black.copy(alpha = 0.45f))
+              .statusBarsPadding()
+              .padding(horizontal = 8.dp, vertical = 4.dp),
+      verticalAlignment = Alignment.CenterVertically,
+  ) {
+    IconButton(onClick = onClose) {
+      Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+    }
+    Spacer(Modifier.weight(1f))
+    if (viewState.capturedImages.isNotEmpty()) {
+      Text(
+          text = "${viewState.capturedImages.size}/$MAX_SCAN_IMAGES",
+          style =
+              MaterialTheme.typography.labelLarge.copy(
+                  fontWeight = FontWeight.Bold,
+                  color = Color.White,
+              ),
+          modifier = Modifier.padding(horizontal = 8.dp),
+      )
+    }
+    val scansRemaining = viewState.scansRemaining
+    if (scansRemaining != null && scansRemaining > 0) {
+      val warn = scansRemaining <= SCANS_REMAINING_WARN_THRESHOLD
+      Text(
+          text = if (warn) "⚠ $scansRemaining scans left" else "$scansRemaining scans left",
+          style =
+              MaterialTheme.typography.labelMedium.copy(
+                  color = if (warn) Color(0xFFFFB300) else Color.White,
+              ),
+          modifier = Modifier.padding(horizontal = 8.dp),
+      )
+    }
+    IconButton(onClick = onToggleFlash) {
+      Icon(
+          imageVector =
+              when (viewState.flashMode) {
+                FlashMode.Off -> Icons.Default.FlashOff
+                FlashMode.On -> Icons.Default.FlashOn
+                FlashMode.Auto -> Icons.Default.FlashAuto
+              },
+          contentDescription = "Flash: ${viewState.flashMode.name}",
+          tint = Color.White,
+      )
+    }
   }
 }
 
@@ -427,22 +468,6 @@ private fun ShutterButton(isCapturing: Boolean, enabled: Boolean, onClick: () ->
   }
 }
 
-@Composable
-private fun FlashButton(flashMode: FlashMode, onClick: () -> Unit) {
-  IconButton(onClick = onClick) {
-    Icon(
-        imageVector =
-            when (flashMode) {
-              FlashMode.Off -> Icons.Default.FlashOff
-              FlashMode.On -> Icons.Default.FlashOn
-              FlashMode.Auto -> Icons.Default.FlashAuto
-            },
-        contentDescription = "Flash: ${flashMode.name}",
-        tint = Color.White,
-    )
-  }
-}
-
 @Suppress("UnstableCollections") // List<Uri> is only used internally; stability not required here
 @Composable
 private fun ThumbnailStrip(
@@ -479,6 +504,42 @@ private fun ThumbnailStrip(
           )
         }
       }
+    }
+  }
+}
+
+@Composable
+private fun ScanCapContent(onUpgrade: () -> Unit, onClose: () -> Unit) {
+  Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    IconButton(
+        onClick = onClose,
+        modifier = Modifier.align(Alignment.TopStart).statusBarsPadding().padding(8.dp),
+    ) {
+      Icon(Icons.Default.Close, contentDescription = "Close")
+    }
+    Column(
+        modifier = Modifier.align(Alignment.Center).padding(horizontal = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+      Icon(
+          Icons.Default.CameraAlt,
+          contentDescription = null,
+          modifier = Modifier.size(64.dp),
+          tint = MaterialTheme.colorScheme.primary,
+      )
+      Spacer(Modifier.height(16.dp))
+      Text("Monthly scan limit reached", style = MaterialTheme.typography.titleLarge)
+      Spacer(Modifier.height(8.dp))
+      Text(
+          text = "Upgrade to Pro for unlimited recipe scans.",
+          style =
+              MaterialTheme.typography.bodyMedium.copy(
+                  color = MaterialTheme.colorScheme.onSurfaceVariant
+              ),
+          textAlign = TextAlign.Center,
+      )
+      Spacer(Modifier.height(24.dp))
+      Button(onClick = onUpgrade) { Text("Upgrade to Pro") }
     }
   }
 }

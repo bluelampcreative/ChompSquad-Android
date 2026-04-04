@@ -71,8 +71,8 @@
 - [x] **2.4** `UI` — Scan result review screen — extracted recipe rendered in canonical schema; field-level inline editing before saving; M3 Expressive card / text-field styles
 - [x] **2.5** `UI` — Ingredient list editor — add, remove, reorder (drag handle via `LazyColumn` reorder); quantity / unit / prep-note fields; 48 dp min row height
 - [x] **2.6** `UI` — Steps editor — add, remove, reorder numbered instruction steps with drag-to-reorder; same reorder pattern as 2.5
-- [ ] **2.7** `Data` — Save recipe — `POST /v1/recipes` via Ktor; write-through to local Room database; haptic + M3 Expressive spring animation confirmation *(follow data management pattern)*
-- [ ] **2.8** `Subscriptions` — Scan cap enforcement — client-side check via RevenueCat entitlement + 402/403 server response; remaining scan indicator in UI; upgrade prompt routes to Paywall (1.7)
+- [x] **2.7** `Data` — Save recipe — `POST /v1/recipes` via Ktor; write-through to local Room database; haptic + M3 Expressive spring animation confirmation *(follow data management pattern)*
+- [x] **2.8** `Subscriptions` — Scan cap enforcement — client-side check via RevenueCat entitlement + 402/403 server response; remaining scan indicator in UI; upgrade prompt routes to Paywall (1.7)
 - [ ] **2.9** `UI` — Manual recipe entry — fallback flow to create a recipe from scratch without scanning; reuses editors from 2.4 – 2.6
 
 ---

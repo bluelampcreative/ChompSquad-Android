@@ -19,7 +19,16 @@ data class CameraViewState(
     val isFrontCamera: Boolean = false,
     val hasCameraPermission: Boolean = false,
     val permissionPermanentlyDenied: Boolean = false,
-)
+    /**
+     * Remaining scans for this billing period. `null` means not yet loaded or the user has
+     * unlimited scans (pro entitlement). `0` means the monthly cap is exhausted.
+     */
+    val scansRemaining: Int? = null,
+) {
+  /** True when the server-reported scan cap has been reached and the user must upgrade. */
+  val isScanCapReached: Boolean
+    get() = scansRemaining == 0
+}
 
 sealed interface CameraAction : ViewAction {
   data class PermissionUpdated(val granted: Boolean, val permanent: Boolean) : CameraAction
@@ -37,6 +46,9 @@ sealed interface CameraAction : ViewAction {
   data object FlashToggled : CameraAction
 
   data object CameraFlipped : CameraAction
+
+  /** Loaded from the server profile; only dispatched for non-pro users. */
+  data class ScanCountLoaded(val remaining: Int) : CameraAction
 }
 
 sealed interface CameraUiEvent {
@@ -54,4 +66,7 @@ sealed interface CameraUiEvent {
   data object OnNext : CameraUiEvent
 
   data object OnClose : CameraUiEvent
+
+  /** User tapped the upgrade CTA on the scan-cap screen. */
+  data object OnUpgrade : CameraUiEvent
 }
