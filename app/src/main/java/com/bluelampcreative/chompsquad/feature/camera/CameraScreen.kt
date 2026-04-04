@@ -76,6 +76,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.bluelampcreative.chompsquad.feature.signin.findActivity
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
+import com.bluelampcreative.chompsquad.ui.theme.brandGolden
 import java.io.File
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -340,7 +341,7 @@ private fun CameraTopBar(
           text = if (warn) "⚠ $scansRemaining scans left" else "$scansRemaining scans left",
           style =
               MaterialTheme.typography.labelMedium.copy(
-                  color = if (warn) Color(0xFFFFB300) else Color.White,
+                  color = if (warn) brandGolden else Color.White,
               ),
           modifier = Modifier.padding(horizontal = 8.dp),
       )

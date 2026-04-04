@@ -20,8 +20,11 @@ data class CameraViewState(
     val hasCameraPermission: Boolean = false,
     val permissionPermanentlyDenied: Boolean = false,
     /**
-     * Remaining scans for this billing period. `null` means not yet loaded or the user has
-     * unlimited scans (pro entitlement). `0` means the monthly cap is exhausted.
+     * Remaining scans for this billing period. `null` covers three cases:
+     * - not yet loaded (initial state before the profile fetch completes),
+     * - user has a pro entitlement (unlimited — indicator suppressed),
+     * - server returned `null` for `scans_remaining` (beta / unlimited server grant). `0` means the
+     *   monthly cap is exhausted and the user must upgrade.
      */
     val scansRemaining: Int? = null,
 ) {
@@ -49,6 +52,13 @@ sealed interface CameraAction : ViewAction {
 
   /** Loaded from the server profile; only dispatched for non-pro users. */
   data class ScanCountLoaded(val remaining: Int) : CameraAction
+
+  /**
+   * Dispatched when [SubscriptionRepository.entitlementStatus] confirms the user has a pro
+   * entitlement. Clears [CameraViewState.scansRemaining] so a previously-set cap is lifted
+   * immediately (e.g. after upgrading from the Paywall while the camera is on the back stack).
+   */
+  data object ProStatusConfirmed : CameraAction
 }
 
 sealed interface CameraUiEvent {

@@ -7,6 +7,8 @@ import com.bluelampcreative.chompsquad.data.purchases.SubscriptionRepository
 import com.bluelampcreative.chompsquad.data.remote.UserProfileApi
 import com.bluelampcreative.chompsquad.data.scanner.ScanSessionRepository
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
 
@@ -18,19 +20,30 @@ class CameraViewModel(
 ) : CoreViewModel<CameraViewState, CameraAction, CameraUiEvent>(CameraViewState()) {
 
   init {
-    // Load remaining scan count for non-pro users so the UI can show the indicator and gate
-    // the scan flow before hitting the server. Pro users have unlimited scans — skip the call.
+    // Observe entitlement changes — distinctUntilChangedBy ensures we only react when hasPro
+    // actually flips, not on every RC poll. This handles two cases:
+    //   1. RC hasn't completed its initial refresh at launch (defaults to false in release).
+    //   2. User upgrades via the Paywall while the camera is on the back stack — hasPro flips
+    //      to true and ProStatusConfirmed immediately clears any stale scansRemaining == 0.
     viewModelScope.launch {
-      if (!subscriptionRepository.entitlementStatus.value.hasPro) {
-        userProfileApi.getProfile().onSuccess { profile ->
-          // scansRemaining == null means the server grants unlimited (e.g. beta users).
-          // Only dispatch when the server gives a concrete count.
-          profile.scansRemaining?.let { remaining ->
-            state.dispatch(CameraAction.ScanCountLoaded(remaining))
+      subscriptionRepository.entitlementStatus
+          .distinctUntilChangedBy { it.hasPro }
+          .collectLatest { status ->
+            if (status.hasPro) {
+              state.dispatch(CameraAction.ProStatusConfirmed)
+            } else {
+              // Non-pro: fetch the remaining scan count so the UI can show the indicator and gate
+              // the scan flow before a round-trip to the server.
+              userProfileApi.getProfile().onSuccess { profile ->
+                // Server returns null for scansRemaining when it grants unlimited (beta users).
+                // Only dispatch when a concrete count is returned.
+                profile.scansRemaining?.let { remaining ->
+                  state.dispatch(CameraAction.ScanCountLoaded(remaining))
+                }
+              }
+              // On failure: don't block. The server enforces the cap with 402/403 if exceeded.
+            }
           }
-        }
-        // On failure: don't block the user. The server will return 402/403 if cap is exceeded.
-      }
     }
   }
 
@@ -56,6 +69,7 @@ class CameraViewModel(
         is CameraAction.FlashToggled -> state.copy(flashMode = state.flashMode.next())
         is CameraAction.CameraFlipped -> state.copy(isFrontCamera = !state.isFrontCamera)
         is CameraAction.ScanCountLoaded -> state.copy(scansRemaining = action.remaining)
+        CameraAction.ProStatusConfirmed -> state.copy(scansRemaining = null)
       }
 
   override fun handleEvent(event: CameraUiEvent) {
