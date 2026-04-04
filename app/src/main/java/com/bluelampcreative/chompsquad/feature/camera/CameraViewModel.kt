@@ -1,14 +1,51 @@
 package com.bluelampcreative.chompsquad.feature.camera
 
 import android.net.Uri
+import androidx.lifecycle.viewModelScope
 import com.bluelampcreative.chompsquad.core.CoreViewModel
+import com.bluelampcreative.chompsquad.data.purchases.SubscriptionRepository
+import com.bluelampcreative.chompsquad.data.remote.UserProfileApi
 import com.bluelampcreative.chompsquad.data.scanner.ScanSessionRepository
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChangedBy
+import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
 
 @KoinViewModel
-class CameraViewModel(private val scanSessionRepository: ScanSessionRepository) :
-    CoreViewModel<CameraViewState, CameraAction, CameraUiEvent>(CameraViewState()) {
+class CameraViewModel(
+    private val scanSessionRepository: ScanSessionRepository,
+    private val userProfileApi: UserProfileApi,
+    private val subscriptionRepository: SubscriptionRepository,
+) : CoreViewModel<CameraViewState, CameraAction, CameraUiEvent>(CameraViewState()) {
+
+  init {
+    // Observe entitlement changes — distinctUntilChangedBy ensures we only react when hasPro
+    // actually flips, not on every RC poll. This handles two cases:
+    //   1. RC hasn't completed its initial refresh at launch (defaults to false in release).
+    //   2. User upgrades via the Paywall while the camera is on the back stack — hasPro flips
+    //      to true and ProStatusConfirmed immediately clears any stale scansRemaining == 0.
+    viewModelScope.launch {
+      subscriptionRepository.entitlementStatus
+          .distinctUntilChangedBy { it.hasPro }
+          .collectLatest { status ->
+            if (status.hasPro) {
+              state.dispatch(CameraAction.ProStatusConfirmed)
+            } else {
+              // Non-pro: fetch the remaining scan count so the UI can show the indicator and gate
+              // the scan flow before a round-trip to the server.
+              userProfileApi.getProfile().onSuccess { profile ->
+                // Server returns null for scansRemaining when it grants unlimited (beta users).
+                // Only dispatch when a concrete count is returned.
+                profile.scansRemaining?.let { remaining ->
+                  state.dispatch(CameraAction.ScanCountLoaded(remaining))
+                }
+              }
+              // On failure: don't block. The server enforces the cap with 402/403 if exceeded.
+            }
+          }
+    }
+  }
 
   override fun reducer(state: CameraViewState, action: CameraAction): CameraViewState =
       when (action) {
@@ -28,23 +65,11 @@ class CameraViewModel(private val scanSessionRepository: ScanSessionRepository) 
             )
         is CameraAction.CaptureStarted -> state.copy(isCapturing = true)
         is CameraAction.CaptureFailed -> state.copy(isCapturing = false)
-        is CameraAction.ImageRemoved ->
-            if (action.index in state.capturedImages.indices)
-                state.copy(
-                    capturedImages =
-                        state.capturedImages.toMutableList().also { it.removeAt(action.index) }
-                )
-            else state
-        is CameraAction.FlashToggled ->
-            state.copy(
-                flashMode =
-                    when (state.flashMode) {
-                      FlashMode.Off -> FlashMode.On
-                      FlashMode.On -> FlashMode.Auto
-                      FlashMode.Auto -> FlashMode.Off
-                    }
-            )
+        is CameraAction.ImageRemoved -> state.removeImageAt(action.index)
+        is CameraAction.FlashToggled -> state.copy(flashMode = state.flashMode.next())
         is CameraAction.CameraFlipped -> state.copy(isFrontCamera = !state.isFrontCamera)
+        is CameraAction.ScanCountLoaded -> state.copy(scansRemaining = action.remaining)
+        CameraAction.ProStatusConfirmed -> state.copy(scansRemaining = null)
       }
 
   override fun handleEvent(event: CameraUiEvent) {
@@ -56,9 +81,14 @@ class CameraViewModel(private val scanSessionRepository: ScanSessionRepository) 
       is CameraUiEvent.OnFlipCamera -> state.dispatch(CameraAction.CameraFlipped)
       is CameraUiEvent.OnToggleFlash -> state.dispatch(CameraAction.FlashToggled)
       is CameraUiEvent.OnNext -> {
-        scanSessionRepository.setPendingImages(state.value.capturedImages.toList())
-        navigate(NavEvent.NavigateToScanSubmission)
+        if (state.value.isScanCapReached) {
+          navigate(NavEvent.NavigateToPaywall)
+        } else {
+          scanSessionRepository.setPendingImages(state.value.capturedImages.toList())
+          navigate(NavEvent.NavigateToScanSubmission)
+        }
       }
+      is CameraUiEvent.OnUpgrade -> navigate(NavEvent.NavigateToPaywall)
       is CameraUiEvent.OnClose -> navigate(NavEvent.GoBack)
     }
   }
@@ -72,3 +102,15 @@ class CameraViewModel(private val scanSessionRepository: ScanSessionRepository) 
   /** Called from the composable when CameraX image capture fails. */
   fun onCaptureFailed() = state.dispatch(CameraAction.CaptureFailed)
 }
+
+private fun CameraViewState.removeImageAt(index: Int): CameraViewState =
+    if (index in capturedImages.indices)
+        copy(capturedImages = capturedImages.toMutableList().also { it.removeAt(index) })
+    else this
+
+private fun FlashMode.next(): FlashMode =
+    when (this) {
+      FlashMode.Off -> FlashMode.On
+      FlashMode.On -> FlashMode.Auto
+      FlashMode.Auto -> FlashMode.Off
+    }

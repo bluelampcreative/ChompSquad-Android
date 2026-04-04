@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.bluelampcreative.chompsquad.core.CoreViewModel
 import com.bluelampcreative.chompsquad.data.mapper.toDomain
+import com.bluelampcreative.chompsquad.data.purchases.SubscriptionRepository
 import com.bluelampcreative.chompsquad.data.remote.ScanApi
 import com.bluelampcreative.chompsquad.data.scanner.ImagePreprocessor
 import com.bluelampcreative.chompsquad.data.scanner.ScanSessionRepository
@@ -23,6 +24,7 @@ class ScanSubmissionViewModel(
     private val scanSessionRepository: ScanSessionRepository,
     private val imagePreprocessor: ImagePreprocessor,
     private val scanApi: ScanApi,
+    private val subscriptionRepository: SubscriptionRepository,
 ) :
     CoreViewModel<ScanSubmissionViewState, ScanSubmissionAction, ScanSubmissionUiEvent>(
         ScanSubmissionViewState()
@@ -98,12 +100,28 @@ class ScanSubmissionViewModel(
                   },
                   onFailure = { error ->
                     Log.e(TAG, "Scan upload failed", error)
-                    state.dispatch(ScanSubmissionAction.SubmitFailed(error.toUserMessage()))
+                    if (
+                        error is ClientRequestException &&
+                            error.response.status.value in SCAN_CAP_STATUS_CODES
+                    ) {
+                      // Server confirmed the scan cap is exhausted. Refresh entitlements
+                      // (the user may have upgraded on another device) then show the Paywall.
+                      viewModelScope.launch { subscriptionRepository.refreshEntitlements() }
+                      navigate(NavEvent.NavigateToPaywall)
+                    } else {
+                      state.dispatch(ScanSubmissionAction.SubmitFailed(error.toUserMessage()))
+                    }
                   },
               )
         }
   }
 }
+
+private const val HTTP_PAYMENT_REQUIRED = 402
+private const val HTTP_FORBIDDEN = 403
+
+// HTTP status codes the server uses to indicate the scan quota is exhausted.
+private val SCAN_CAP_STATUS_CODES = setOf(HTTP_PAYMENT_REQUIRED, HTTP_FORBIDDEN)
 
 private fun Throwable.toUserMessage(): String =
     when (this) {
