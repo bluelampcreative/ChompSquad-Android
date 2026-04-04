@@ -58,4 +58,7 @@ sealed interface AppRoute : NavKey {
 
   /** Step list editor — add, remove, reorder. Task 2.6. */
   @Serializable data object StepEditor : AppRoute
+
+  /** Manual recipe entry — create a recipe from scratch without scanning. Task 2.9. */
+  @Serializable data object ManualEntry : AppRoute
 }

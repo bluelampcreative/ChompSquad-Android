@@ -40,4 +40,7 @@ sealed interface NavEvent {
 
   /** Push the Step Editor screen (task 2.6). */
   data object NavigateToStepEditor : NavEvent
+
+  /** Push the Manual Entry screen (task 2.9). */
+  data object NavigateToManualEntry : NavEvent
 }

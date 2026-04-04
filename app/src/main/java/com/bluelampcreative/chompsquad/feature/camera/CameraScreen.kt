@@ -52,6 +52,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -386,6 +387,12 @@ private fun CameraBottomBar(
           onRemove = { index -> onHandleEvent(CameraUiEvent.OnImageRemoved(index)) },
           modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
       )
+    }
+    TextButton(
+        onClick = { onHandleEvent(CameraUiEvent.OnEnterManually) },
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+    ) {
+      Text("Enter recipe manually", color = Color.White.copy(alpha = 0.7f))
     }
     Row(
         modifier =
