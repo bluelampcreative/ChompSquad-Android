@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.bluelampcreative.chompsquad.feature.catalog.CatalogScreen
 import com.bluelampcreative.chompsquad.feature.profile.ProfileScreen
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
 
@@ -64,8 +65,12 @@ fun MainShellScreen(onNavEvent: (NavEvent) -> Unit) {
       },
   ) { innerPadding ->
     when (selectedTab) {
+      MainTab.CATALOG ->
+          CatalogScreen(
+              onNavEvent = currentOnNavEvent,
+              modifier = Modifier.padding(innerPadding),
+          )
       // SCAN never becomes the active tab — handled via nav event above.
-      MainTab.CATALOG,
       MainTab.SCAN,
       MainTab.PLANNER ->
           TabPlaceholder(selectedTab.label, modifier = Modifier.padding(innerPadding))

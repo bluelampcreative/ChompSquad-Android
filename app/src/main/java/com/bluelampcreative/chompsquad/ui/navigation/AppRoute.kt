@@ -61,4 +61,7 @@ sealed interface AppRoute : NavKey {
 
   /** Manual recipe entry — create a recipe from scratch without scanning. Task 2.9. */
   @Serializable data object ManualEntry : AppRoute
+
+  /** Recipe detail screen. Task 3.2. */
+  @Serializable data class RecipeDetail(val id: String) : AppRoute
 }

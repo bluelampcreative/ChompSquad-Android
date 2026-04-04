@@ -43,4 +43,7 @@ sealed interface NavEvent {
 
   /** Push the Manual Entry screen (task 2.9). */
   data object NavigateToManualEntry : NavEvent
+
+  /** Push the Recipe Detail screen (task 3.2). */
+  data class NavigateToRecipeDetail(val id: String) : NavEvent
 }

@@ -89,6 +89,10 @@ data class CreateRecipeRequestDto(
     val steps: List<StepDto> = emptyList(),
 )
 
+@Serializable data class RefreshImageUrlRequestDto(@SerialName("blob_path") val blobPath: String)
+
+@Serializable data class RefreshImageUrlResponseDto(val url: String)
+
 @Serializable
 data class PatchRecipeRequestDto(
     val title: String? = null,
