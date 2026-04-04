@@ -12,8 +12,6 @@ data class CatalogViewState(
     val searchQuery: String = "",
     val selectedTag: String? = null,
     val isGridView: Boolean = false,
-    /** True while the SearchBar is expanded (user actively searching). */
-    val isSearchExpanded: Boolean = false,
     /** Non-null when a background sync fails; shown as a transient snackbar. */
     val syncError: String? = null,
 )
@@ -29,8 +27,6 @@ sealed interface CatalogAction : ViewAction {
 
   data object ViewToggled : CatalogAction
 
-  data class SearchExpandedChanged(val expanded: Boolean) : CatalogAction
-
   data object SyncStarted : CatalogAction
 
   data object SyncCompleted : CatalogAction
@@ -44,8 +40,6 @@ sealed interface CatalogUiEvent {
   data class OnTagSelected(val tag: String?) : CatalogUiEvent
 
   data object OnToggleView : CatalogUiEvent
-
-  data class OnSearchExpandedChange(val expanded: Boolean) : CatalogUiEvent
 
   data class OnRecipeTapped(val id: String) : CatalogUiEvent
 
