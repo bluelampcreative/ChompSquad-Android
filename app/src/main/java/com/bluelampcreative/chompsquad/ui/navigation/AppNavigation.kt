@@ -23,6 +23,7 @@ import com.bluelampcreative.chompsquad.feature.onboarding.OnboardingScreen
 import com.bluelampcreative.chompsquad.feature.paywall.PaywallScreen
 import com.bluelampcreative.chompsquad.feature.profile.ProfileScreen
 import com.bluelampcreative.chompsquad.feature.scan.IngredientEditorScreen
+import com.bluelampcreative.chompsquad.feature.scan.ManualEntryScreen
 import com.bluelampcreative.chompsquad.feature.scan.ScanResultScreen
 import com.bluelampcreative.chompsquad.feature.scan.ScanSubmissionScreen
 import com.bluelampcreative.chompsquad.feature.scan.StepEditorScreen
@@ -98,6 +99,9 @@ fun ChompSquadApp() {
             entry<AppRoute.StepEditor> {
               StepEditorScreen(onNavEvent = { backStack.handleNavEvent(it) })
             }
+            entry<AppRoute.ManualEntry> {
+              ManualEntryScreen(onNavEvent = { backStack.handleNavEvent(it) })
+            }
           },
   )
 }
@@ -117,6 +121,11 @@ private fun AuthPlaceholderScreen(label: String) {
 }
 
 private fun NavBackStack<NavKey>.handleNavEvent(event: NavEvent) {
+  // Simple push-only events are handled via the helper to keep CC under threshold.
+  simplePushRoute(event)?.let {
+    this += it
+    return
+  }
   when (event) {
     NavEvent.GoBack -> removeLastOrNull()
     NavEvent.NavigateToMain -> {
@@ -133,20 +142,32 @@ private fun NavBackStack<NavKey>.handleNavEvent(event: NavEvent) {
       removeLastOrNull()
       this += AppRoute.SignUp
     }
-    NavEvent.NavigateToSettings -> this += AppRoute.Settings
-    NavEvent.NavigateToDeveloperSettings -> this += AppRoute.DeveloperSettings
-    NavEvent.NavigateToPaywall -> this += AppRoute.Paywall
     NavEvent.NavigateToSignInClearStack -> {
       clear()
       this += AppRoute.SignIn
     }
-    NavEvent.NavigateToCameraCapture -> this += AppRoute.CameraCapture
-    NavEvent.NavigateToScanSubmission -> this += AppRoute.ScanSubmission
     NavEvent.NavigateToScanResult -> {
       removeLastOrNull() // pop ScanSubmission so back doesn't return to the loading screen
       this += AppRoute.ScanResult
     }
-    NavEvent.NavigateToIngredientEditor -> this += AppRoute.IngredientEditor
-    NavEvent.NavigateToStepEditor -> this += AppRoute.StepEditor
+    else -> Unit // handled above via simplePushRoute
   }
 }
+
+/**
+ * Maps simple push-only [NavEvent]s to their target [AppRoute]. Returns null for events that
+ * require custom backstack manipulation (pop, clear, etc.) so they fall through to the full `when`
+ * block in [handleNavEvent].
+ */
+private fun simplePushRoute(event: NavEvent): AppRoute? =
+    when (event) {
+      NavEvent.NavigateToSettings -> AppRoute.Settings
+      NavEvent.NavigateToDeveloperSettings -> AppRoute.DeveloperSettings
+      NavEvent.NavigateToPaywall -> AppRoute.Paywall
+      NavEvent.NavigateToCameraCapture -> AppRoute.CameraCapture
+      NavEvent.NavigateToScanSubmission -> AppRoute.ScanSubmission
+      NavEvent.NavigateToIngredientEditor -> AppRoute.IngredientEditor
+      NavEvent.NavigateToStepEditor -> AppRoute.StepEditor
+      NavEvent.NavigateToManualEntry -> AppRoute.ManualEntry
+      else -> null
+    }

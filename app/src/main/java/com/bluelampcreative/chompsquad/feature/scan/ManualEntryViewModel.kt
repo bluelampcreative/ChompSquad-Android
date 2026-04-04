@@ -4,7 +4,6 @@ import androidx.lifecycle.viewModelScope
 import com.bluelampcreative.chompsquad.core.CoreViewModel
 import com.bluelampcreative.chompsquad.data.remote.RecipeRepository
 import com.bluelampcreative.chompsquad.data.scanner.ScanSessionRepository
-import com.bluelampcreative.chompsquad.domain.model.Recipe
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.flow.collect
@@ -12,25 +11,28 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
 
+/**
+ * ViewModel for the manual recipe entry screen (task 2.9).
+ *
+ * Reuses [ScanResultViewState], [ScanResultAction], and [ScanResultUiEvent] — the form fields and
+ * editing behaviour are identical to the scan result review screen. The only differences are:
+ * - Initial state is blank (no scan result to pre-populate).
+ * - [originType] is `"manual"` in the POST body.
+ */
 @KoinViewModel
-class ScanResultViewModel(
+class ManualEntryViewModel(
     private val scanSessionRepository: ScanSessionRepository,
     private val recipeRepository: RecipeRepository,
-) : CoreViewModel<ScanResultViewState, ScanResultAction, ScanResultUiEvent>(ScanResultViewState()) {
+) :
+    CoreViewModel<ScanResultViewState, ScanResultAction, ScanResultUiEvent>(
+        ScanResultViewState(isLoading = false)
+    ) {
 
   // Guards against duplicate POSTs from rapid taps before isSaving propagates through the
   // StateReducer channel. Checked and set synchronously before the coroutine is launched.
   private val isSaveInFlight = AtomicBoolean(false)
 
   init {
-    val recipe = scanSessionRepository.getScanResult()
-    if (recipe != null) {
-      state.dispatch(ScanResultAction.RecipeLoaded(recipe))
-    } else {
-      // No result in session — navigate back (handles process death or unexpected entry).
-      navigate(NavEvent.GoBack)
-    }
-
     // Collect ingredient edits written back by IngredientEditorViewModel on Done.
     viewModelScope.launch {
       scanSessionRepository.ingredientEdits.filterNotNull().collect { ingredients ->
@@ -54,7 +56,6 @@ class ScanResultViewModel(
       return it
     }
     return when (action) {
-      is ScanResultAction.RecipeLoaded -> action.recipe.toViewState()
       is ScanResultAction.IngredientsUpdated -> state.copy(ingredients = action.ingredients)
       is ScanResultAction.StepsUpdated -> state.copy(steps = action.steps)
       ScanResultAction.SaveStarted -> state.copy(isSaving = true, saveError = null)
@@ -95,10 +96,7 @@ class ScanResultViewModel(
         scanSessionRepository.clear()
         navigate(NavEvent.NavigateToMain)
       }
-      ScanResultUiEvent.OnClose -> {
-        scanSessionRepository.clear()
-        navigate(NavEvent.GoBack)
-      }
+      ScanResultUiEvent.OnClose -> navigate(NavEvent.GoBack)
     }
   }
 
@@ -108,7 +106,7 @@ class ScanResultViewModel(
     state.dispatch(ScanResultAction.SaveStarted)
     viewModelScope.launch {
       recipeRepository
-          .saveRecipe(current.toRequestDto("scanned"))
+          .saveRecipe(current.toRequestDto("manual"))
           .onSuccess { state.dispatch(ScanResultAction.SaveSucceeded) }
           .onFailure { error ->
             isSaveInFlight.set(false)
@@ -117,19 +115,3 @@ class ScanResultViewModel(
     }
   }
 }
-
-private fun Recipe.toViewState(): ScanResultViewState =
-    ScanResultViewState(
-        isLoading = false,
-        title = title,
-        yieldAmount = yieldAmount ?: "",
-        yieldUnit = yieldUnit ?: "",
-        prepTime = prepTime?.toString() ?: "",
-        cookTime = cookTime?.toString() ?: "",
-        totalTime = totalTime?.toString() ?: "",
-        source = source ?: "",
-        tags = tags.joinToString(", "),
-        heroImageUrl = images.minByOrNull { it.position }?.url,
-        ingredients = ingredients,
-        steps = steps,
-    )

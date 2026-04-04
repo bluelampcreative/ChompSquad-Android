@@ -79,4 +79,7 @@ sealed interface CameraUiEvent {
 
   /** User tapped the upgrade CTA on the scan-cap screen. */
   data object OnUpgrade : CameraUiEvent
+
+  /** User tapped "Enter manually" — skip scanning and create a recipe from scratch. */
+  data object OnEnterManually : CameraUiEvent
 }

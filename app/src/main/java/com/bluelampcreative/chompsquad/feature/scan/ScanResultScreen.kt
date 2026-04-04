@@ -163,7 +163,7 @@ fun ScanResultScreen(
 private const val SAVE_SUCCESS_DELAY_MS = 800L
 
 @Composable
-private fun ScanResultContent(
+internal fun ScanResultContent(
     viewState: ScanResultViewState,
     onEvent: (ScanResultUiEvent) -> Unit,
     modifier: Modifier = Modifier,

@@ -89,6 +89,7 @@ class CameraViewModel(
         }
       }
       is CameraUiEvent.OnUpgrade -> navigate(NavEvent.NavigateToPaywall)
+      is CameraUiEvent.OnEnterManually -> navigate(NavEvent.NavigateToManualEntry)
       is CameraUiEvent.OnClose -> navigate(NavEvent.GoBack)
     }
   }
