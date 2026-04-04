@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ViewList
@@ -29,9 +30,9 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SearchBar
+import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -95,34 +96,59 @@ private fun CatalogContent(
     modifier: Modifier = Modifier,
 ) {
   Column(modifier = modifier.fillMaxSize()) {
-    // ── Search + view toggle ──────────────────────────────────────────────────
-    Row(
-        modifier =
-            Modifier.fillMaxWidth()
-                .padding(horizontal = ChompSpacing.md, vertical = ChompSpacing.sm),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(ChompSpacing.xs),
+    SearchBar(
+        modifier = Modifier.fillMaxWidth(),
+        inputField = {
+          SearchBarDefaults.InputField(
+              query = viewState.searchQuery,
+              onQueryChange = { onEvent(CatalogUiEvent.OnSearchQueryChanged(it)) },
+              onSearch = { onEvent(CatalogUiEvent.OnSearchExpandedChange(false)) },
+              expanded = viewState.isSearchExpanded,
+              onExpandedChange = { onEvent(CatalogUiEvent.OnSearchExpandedChange(it)) },
+              placeholder = { Text("Search recipes…") },
+              leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+              trailingIcon = {
+                Row {
+                  if (viewState.searchQuery.isNotBlank()) {
+                    IconButton(onClick = { onEvent(CatalogUiEvent.OnSearchQueryChanged("")) }) {
+                      Icon(Icons.Default.Close, contentDescription = "Clear search")
+                    }
+                  }
+                  IconButton(onClick = { onEvent(CatalogUiEvent.OnToggleView) }) {
+                    Icon(
+                        imageVector =
+                            if (viewState.isGridView) Icons.Default.ViewList
+                            else Icons.Default.GridView,
+                        contentDescription =
+                            if (viewState.isGridView) "Switch to list view"
+                            else "Switch to grid view",
+                    )
+                  }
+                }
+              },
+          )
+        },
+        expanded = viewState.isSearchExpanded,
+        onExpandedChange = { onEvent(CatalogUiEvent.OnSearchExpandedChange(it)) },
     ) {
-      OutlinedTextField(
-          value = viewState.searchQuery,
-          onValueChange = { onEvent(CatalogUiEvent.OnSearchQueryChanged(it)) },
-          placeholder = { Text("Search recipes…") },
-          leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-          singleLine = true,
-          modifier = Modifier.weight(1f),
-          shape = MaterialTheme.shapes.large,
-          colors = OutlinedTextFieldDefaults.colors(),
-      )
-      IconButton(onClick = { onEvent(CatalogUiEvent.OnToggleView) }) {
-        Icon(
-            imageVector =
-                if (viewState.isGridView) Icons.Default.ViewList else Icons.Default.GridView,
-            contentDescription =
-                if (viewState.isGridView) "Switch to list view" else "Switch to grid view",
-        )
-      }
+      // Content shown when the user is actively searching.
+      CatalogListSection(viewState = viewState, onEvent = onEvent, modifier = Modifier.weight(1f))
     }
 
+    // Content shown when search is not expanded (normal browse state).
+    if (!viewState.isSearchExpanded) {
+      CatalogListSection(viewState = viewState, onEvent = onEvent, modifier = Modifier.weight(1f))
+    }
+  }
+}
+
+@Composable
+private fun CatalogListSection(
+    viewState: CatalogViewState,
+    onEvent: (CatalogUiEvent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+  Column(modifier = modifier) {
     // ── Tag filter chips ──────────────────────────────────────────────────────
     if (viewState.availableTags.isNotEmpty()) {
       FilterChipRow(

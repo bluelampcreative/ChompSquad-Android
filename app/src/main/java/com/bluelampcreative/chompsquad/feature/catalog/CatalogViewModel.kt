@@ -64,6 +64,7 @@ class CatalogViewModel(
         is CatalogAction.SearchQueryChanged -> state.copy(searchQuery = action.query)
         is CatalogAction.TagSelected -> state.copy(selectedTag = action.tag)
         CatalogAction.ViewToggled -> state.copy(isGridView = !state.isGridView)
+        is CatalogAction.SearchExpandedChanged -> state.copy(isSearchExpanded = action.expanded)
         CatalogAction.SyncStarted -> state.copy(syncError = null)
         CatalogAction.SyncCompleted -> state.copy(isLoading = false)
         is CatalogAction.SyncFailed -> state.copy(syncError = action.message, isLoading = false)
@@ -85,6 +86,8 @@ class CatalogViewModel(
         tagFlow.value = event.tag
       }
       CatalogUiEvent.OnToggleView -> state.dispatch(CatalogAction.ViewToggled)
+      is CatalogUiEvent.OnSearchExpandedChange ->
+          state.dispatch(CatalogAction.SearchExpandedChanged(event.expanded))
       is CatalogUiEvent.OnRecipeTapped -> navigate(NavEvent.NavigateToRecipeDetail(event.id))
       CatalogUiEvent.OnRefresh -> viewModelScope.launch { sync() }
       is CatalogUiEvent.OnImageRefreshNeeded ->
