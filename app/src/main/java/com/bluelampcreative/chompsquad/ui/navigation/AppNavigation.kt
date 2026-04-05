@@ -22,6 +22,7 @@ import com.bluelampcreative.chompsquad.feature.main.MainShellScreen
 import com.bluelampcreative.chompsquad.feature.onboarding.OnboardingScreen
 import com.bluelampcreative.chompsquad.feature.paywall.PaywallScreen
 import com.bluelampcreative.chompsquad.feature.profile.ProfileScreen
+import com.bluelampcreative.chompsquad.feature.recipedetail.RecipeDetailScreen
 import com.bluelampcreative.chompsquad.feature.scan.IngredientEditorScreen
 import com.bluelampcreative.chompsquad.feature.scan.ManualEntryScreen
 import com.bluelampcreative.chompsquad.feature.scan.ScanResultScreen
@@ -103,8 +104,10 @@ fun ChompSquadApp() {
               ManualEntryScreen(onNavEvent = { backStack.handleNavEvent(it) })
             }
             entry<AppRoute.RecipeDetail> { key ->
-              // Full detail screen implemented in task 3.2; placeholder until then.
-              AuthPlaceholderScreen(label = "Recipe ${key.id}")
+              RecipeDetailScreen(
+                  recipeId = key.id,
+                  onNavEvent = { backStack.handleNavEvent(it) },
+              )
             }
           },
   )

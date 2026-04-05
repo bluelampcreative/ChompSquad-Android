@@ -195,8 +195,11 @@ dependencies {
   implementation(libs.koin.androidx.compose)
   implementation(libs.koin.annotations)
 
-  // ── Ktor Client 3 (CIO engine) ───────────────────────────────────────────
+  // ── Ktor Client 3 ────────────────────────────────────────────────────────
+  // CIO engine: API client (bearer auth, JSON, retry).
+  // Android engine: image fetches — uses HttpURLConnection, integrates with Android DNS.
   implementation(libs.bundles.ktor)
+  implementation(libs.ktor.client.android)
 
   // ── kotlinx ──────────────────────────────────────────────────────────────
   implementation(libs.kotlinx.serialization.json)

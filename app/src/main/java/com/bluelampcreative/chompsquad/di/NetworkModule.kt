@@ -9,6 +9,7 @@ import com.bluelampcreative.chompsquad.data.remote.dto.TokenResponseDto
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.call.body
+import io.ktor.client.engine.android.Android
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.HttpRequestRetry
@@ -16,6 +17,7 @@ import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
+import io.ktor.client.plugins.cache.HttpCache
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
@@ -30,6 +32,7 @@ import kotlinx.serialization.json.Json
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module
+import org.koin.core.annotation.Named
 import org.koin.core.annotation.Singleton
 
 @Module(includes = [DataModule::class])
@@ -69,10 +72,24 @@ class NetworkModule {
       }
     }
   }
+
+  @Singleton
+  @Named("coil")
+  fun provideImageHttpClient(): HttpClient =
+      HttpClient(Android) {
+        install(HttpCache)
+        install(HttpTimeout) {
+          connectTimeoutMillis = IMAGE_CONNECT_TIMEOUT_MS
+          requestTimeoutMillis = IMAGE_REQUEST_TIMEOUT_MS
+        }
+        // No auth, no base URL, no expectSuccess — image fetches use self-contained signed URLs.
+      }
 }
 
 private const val SOCKET_TIMEOUT_MS = 45_000L
 private const val HTTP_GATEWAY_TIMEOUT = 504
+private const val IMAGE_CONNECT_TIMEOUT_MS = 10_000L
+private const val IMAGE_REQUEST_TIMEOUT_MS = 30_000L
 
 private fun HttpClientConfig<*>.installBearerAuth(
     tokenRepository: TokenRepository,

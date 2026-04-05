@@ -42,6 +42,18 @@ interface RecipeRepository {
   ): Result<Unit>
 
   /**
+   * Emits the locally cached full [Recipe] for [id], re-emitting whenever Room changes. Returns
+   * null if no local data exists yet (before the first [fetchRecipe] completes).
+   */
+  fun observeRecipe(id: String): Flow<Recipe?>
+
+  /**
+   * Fetches the full recipe detail from `GET /v1/recipes/{id}` and writes it to Room via
+   * [upsertRecipeWithDetails], replacing any existing stub or stale data.
+   */
+  suspend fun fetchRecipe(id: String): Result<Unit>
+
+  /**
    * Calls `POST /v1/images/refresh-url` to obtain a fresh signed URL for [blobPath], then updates
    * the stored URL in Room so [observeRecipes] re-emits with the corrected URL. Only call when
    * [blobPath] is non-blank (full recipes have real blob paths; list stubs do not).
@@ -68,6 +80,19 @@ class DefaultRecipeRepository(
 
   override fun observeRecipes(tag: String?, search: String?): Flow<List<RecipeListItem>> =
       recipeDao.observeFiltered(tag, search).map { list -> list.map { it.toListItem() } }
+
+  override fun observeRecipe(id: String): Flow<Recipe?> =
+      recipeDao.observeById(id).map { it?.toDomain() }
+
+  override suspend fun fetchRecipe(id: String): Result<Unit> =
+      recipeApi.getRecipeById(id).mapCatching { dto ->
+        recipeDao.upsertRecipeWithDetails(
+            recipe = dto.toEntity(),
+            images = dto.toImageEntities(),
+            ingredients = dto.toIngredientEntities(),
+            steps = dto.toStepEntities(),
+        )
+      }
 
   override suspend fun syncRecipes(
       page: Int,

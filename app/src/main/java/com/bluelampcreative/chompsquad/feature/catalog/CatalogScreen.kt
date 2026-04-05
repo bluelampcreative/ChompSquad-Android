@@ -1,5 +1,6 @@
 package com.bluelampcreative.chompsquad.feature.catalog
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +20,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.CircularProgressIndicator
@@ -44,21 +46,21 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.bluelampcreative.chompsquad.domain.model.RecipeListItem
 import com.bluelampcreative.chompsquad.ui.navigation.NavEvent
 import com.bluelampcreative.chompsquad.ui.theme.ChompSpacing
+import com.bluelampcreative.chompsquad.ui.theme.ChompSquadTheme
 import org.koin.androidx.compose.koinViewModel
 
-@Suppress(
-    "ModifierMissing",
-    "ComposeModifierMissing",
-) // Root tab composable — no modifier parameter needed
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CatalogScreen(
@@ -271,12 +273,12 @@ private fun RecipeCard(
 ) {
   if (isGridView) {
     ElevatedCard(modifier = modifier.fillMaxWidth().clickable(onClick = onClick)) {
-      AsyncImage(
-          model = recipe.heroImageUrl,
+      RecipeImageSlot(
+          url = recipe.heroImageUrl,
           contentDescription = recipe.title,
-          contentScale = ContentScale.Crop,
-          onError = { onImageLoadFail() },
+          onError = onImageLoadFail,
           modifier = Modifier.fillMaxWidth().aspectRatio(1f).clip(MaterialTheme.shapes.medium),
+          iconSize = 40.dp,
       )
       Column(modifier = Modifier.padding(ChompSpacing.sm)) {
         Text(
@@ -301,12 +303,12 @@ private fun RecipeCard(
           horizontalArrangement = Arrangement.spacedBy(ChompSpacing.sm),
           verticalAlignment = Alignment.CenterVertically,
       ) {
-        AsyncImage(
-            model = recipe.heroImageUrl,
+        RecipeImageSlot(
+            url = recipe.heroImageUrl,
             contentDescription = recipe.title,
-            contentScale = ContentScale.Crop,
-            onError = { onImageLoadFail() },
+            onError = onImageLoadFail,
             modifier = Modifier.size(72.dp).clip(MaterialTheme.shapes.medium),
+            iconSize = 28.dp,
         )
         Column(modifier = Modifier.weight(1f)) {
           Text(
@@ -335,4 +337,45 @@ private fun RecipeCard(
       }
     }
   }
+}
+
+@Composable
+private fun RecipeImageSlot(
+    url: String?,
+    contentDescription: String?,
+    onError: () -> Unit,
+    modifier: Modifier = Modifier,
+    iconSize: Dp = 32.dp,
+) {
+  val backgroundColor = MaterialTheme.colorScheme.primaryContainer
+  val iconTint = MaterialTheme.colorScheme.onPrimaryContainer
+  Box(modifier = modifier, contentAlignment = Alignment.Center) {
+    Box(
+        modifier = Modifier.fillMaxSize().background(backgroundColor),
+        contentAlignment = Alignment.Center,
+    ) {
+      Icon(
+          imageVector = Icons.Default.Restaurant,
+          contentDescription = null,
+          tint = iconTint,
+          modifier = Modifier.size(iconSize),
+      )
+    }
+    if (!url.isNullOrBlank()) {
+      AsyncImage(
+          model = url,
+          contentDescription = contentDescription,
+          contentScale = ContentScale.Crop,
+          placeholder = ColorPainter(backgroundColor),
+          onError = { onError() },
+          modifier = Modifier.fillMaxSize(),
+      )
+    }
+  }
+}
+
+@Preview
+@Composable
+private fun CatalogScreenPreview() {
+  ChompSquadTheme { CatalogScreen(onNavEvent = {}) }
 }
